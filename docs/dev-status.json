@@ -3,7 +3,7 @@
   "readyToPublish": false,
   "currentPhase": 4,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-08T08:21:08.646Z",
+  "lastUpdatedAt": "2026-02-08T08:25:02.531Z",
   "completedAt": null,
   "phases": {
     "1": {
@@ -44,23 +44,79 @@
     "4": {
       "name": "feature-planning",
       "displayName": "Planning the Details",
-      "status": "in_progress",
+      "status": "completed",
       "tasks": {
-        "mocks-analyzed": "pending",
-        "wiring-plan-created": "pending",
-        "features-populated": "pending"
+        "mocks-analyzed": "completed",
+        "wiring-plan-created": "completed",
+        "features-populated": "completed"
       }
     },
     "5": {
       "name": "feature-wiring",
       "displayName": "Bringing It to Life",
-      "status": "pending",
+      "status": "in_progress",
       "tasks": {
         "all-features-wired": "pending",
         "share-button-wired": "pending",
         "mocks-file-empty": "pending"
       },
-      "features": {}
+      "features": {
+        "cycles-albums": {
+          "type": "database",
+          "mockName": "MOCK_CYCLE_STATE, MOCK_PAST_ALBUMS",
+          "status": "pending",
+          "subSteps": {
+            "schema-created": "pending",
+            "actions-created": "pending",
+            "hook-created": "pending",
+            "mock-swapped": "pending",
+            "validated": "pending"
+          }
+        },
+        "submissions-voting": {
+          "type": "database",
+          "mockName": "MOCK_SUBMISSIONS",
+          "status": "pending",
+          "subSteps": {
+            "schema-created": "pending",
+            "actions-created": "pending",
+            "hook-created": "pending",
+            "mock-swapped": "pending",
+            "validated": "pending"
+          }
+        },
+        "reviews": {
+          "type": "database",
+          "mockName": "MOCK_REVIEWS",
+          "status": "pending",
+          "subSteps": {
+            "schema-created": "pending",
+            "actions-created": "pending",
+            "hook-created": "pending",
+            "mock-swapped": "pending",
+            "validated": "pending"
+          }
+        },
+        "user-identity": {
+          "type": "social",
+          "mockName": "implicit",
+          "status": "pending",
+          "subSteps": {
+            "sdk-integrated": "pending",
+            "hook-created": "pending",
+            "mock-swapped": "pending",
+            "validated": "pending"
+          }
+        },
+        "share-button": {
+          "type": "sharing",
+          "status": "pending",
+          "subSteps": {
+            "share-manager-delegated": "pending",
+            "validated": "pending"
+          }
+        }
+      }
     },
     "6": {
       "name": "post-launch",
