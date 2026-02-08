@@ -1,39 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H3, P, Button } from '@neynar/ui';
+import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
 import { ShareButton } from '@/neynar-farcaster-sdk/mini';
-import { usePastAlbums, type AlbumData } from '@/hooks/use-cycle';
+import { usePastAlbums } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';
-import { MOCK_PAST_ALBUMS, MOCK_REVIEWS, MOCK_ALBUM_TRACKS } from '@/data/mocks';
 import { AlbumDetailView } from './album-detail-view';
 
 export function ArchiveTab() {
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
 
   // Get past albums from database
-  const { albums: dbAlbums, isLoading } = usePastAlbums(new Date().getFullYear());
+  const { albums, isLoading } = usePastAlbums(new Date().getFullYear());
 
-  // Use real data if available, fall back to mock
-  const hasRealData = dbAlbums.length > 0;
-
-  // Only query reviews if we have real data (mock IDs aren't valid UUIDs)
-  const shouldQueryReviews = hasRealData && selectedAlbumId;
-  const { reviews: dbReviews } = useReviews(shouldQueryReviews ? selectedAlbumId : null);
-  const albums = hasRealData ? dbAlbums : MOCK_PAST_ALBUMS.map(a => ({
-    id: String(a.id),
-    title: a.title,
-    artist: a.artist,
-    coverUrl: '',
-    spotifyUrl: '',
-    avgRating: a.avgRating,
-    totalReviews: a.reviews,
-    mostLovedTrack: null,
-    mostLovedTrackVotes: null,
-    weekNumber: a.weekNumber,
-    submittedByUsername: '',
-    tracks: null,
-  }));
+  // Get reviews for selected album
+  const { reviews } = useReviews(selectedAlbumId);
 
   const albumsThisYear = albums.length;
   const albumsRemaining = 26 - albumsThisYear;
@@ -47,11 +28,16 @@ export function ArchiveTab() {
     ? albums.find(a => a.id === selectedAlbumId) ?? null
     : null;
 
-  // Reviews for selected album
-  const reviews = dbReviews.length > 0 ? dbReviews : MOCK_REVIEWS.map(r => ({
-    ...r,
-    id: String(r.id),
-  }));
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
 
   if (selectedAlbum) {
     return (
@@ -70,7 +56,7 @@ export function ArchiveTab() {
           submittedBy: selectedAlbum.submittedByUsername,
         }}
         reviews={reviews}
-        tracks={selectedAlbum.tracks ?? MOCK_ALBUM_TRACKS}
+        tracks={selectedAlbum.tracks ?? []}
         onBack={() => setSelectedAlbumId(null)}
         canReview={true}
       />

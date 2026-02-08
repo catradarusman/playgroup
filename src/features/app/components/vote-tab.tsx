@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H3, P, Button } from '@neynar/ui';
+import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
 import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
 import { useCycle } from '@/hooks/use-cycle';
 import { useSubmissions, useUserSubmissionCount, useVote } from '@/hooks/use-submissions';
-import { MOCK_CYCLE_STATE, MOCK_SUBMISSIONS } from '@/data/mocks';
 import { SubmissionForm } from './submission-form';
 
 export function VoteTab() {
@@ -20,7 +19,7 @@ export function VoteTab() {
   const { cycle, isLoading: cycleLoading } = useCycle();
 
   // Get submissions with vote status
-  const { submissions: dbSubmissions, isLoading: submissionsLoading, refresh: refreshSubmissions } = useSubmissions(
+  const { submissions, isLoading: submissionsLoading, refresh: refreshSubmissions } = useSubmissions(
     cycle?.id ?? null,
     userFid
   );
@@ -31,19 +30,11 @@ export function VoteTab() {
   // Voting hook
   const { vote, isVoting } = useVote();
 
-  // Use real data - only fall back to mock if no cycle exists
-  // If we have a real cycle, show real submissions (even if empty)
-  const hasRealCycle = cycle?.id && cycle.id.length > 10; // Real UUIDs are longer
-  const submissions = hasRealCycle ? dbSubmissions : MOCK_SUBMISSIONS.map(s => ({
-    ...s,
-    id: String(s.id),
-  }));
-
-  const phase = cycle?.phase ?? MOCK_CYCLE_STATE.phase;
-  const daysLeftInPhase = cycle?.countdown?.days ?? MOCK_CYCLE_STATE.daysLeftInPhase;
-  const hoursLeft = cycle?.countdown?.hours ?? MOCK_CYCLE_STATE.hoursLeft;
-  const minutesLeft = cycle?.countdown?.minutes ?? MOCK_CYCLE_STATE.minutesLeft;
-  const userSubmissionsThisCycle = hasRealCycle ? userSubmissionCount : MOCK_CYCLE_STATE.userSubmissionsThisCycle;
+  const phase = cycle?.phase ?? 'voting';
+  const daysLeftInPhase = cycle?.countdown?.days ?? 0;
+  const hoursLeft = cycle?.countdown?.hours ?? 0;
+  const minutesLeft = cycle?.countdown?.minutes ?? 0;
+  const userSubmissionsThisCycle = userSubmissionCount;
   const maxSubmissionsPerCycle = 3;
 
   const canVote = phase === 'voting';
@@ -51,13 +42,24 @@ export function VoteTab() {
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
-    // Only allow voting on real data (not mocks with non-UUID IDs)
-    if (!userFid || isVoting || !hasRealCycle) return;
+    if (!userFid || isVoting) return;
     const success = await vote(id, userFid);
     if (success) {
       refreshSubmissions();
     }
   };
+
+  // Loading state
+  if (cycleLoading || submissionsLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
 
   if (showSubmitForm) {
     return (
