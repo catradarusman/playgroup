@@ -69,7 +69,7 @@ function CurrentAlbumTab() {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="sketch-text text-sm opacity-60">{mockCurrentAlbum.daysLeft} days left to listen & review</p>
+            <p className="sketch-text text-sm opacity-60">{mockCurrentAlbum.daysLeft} days left • {mockCurrentAlbum.listenersCount} listening</p>
           </div>
 
           <SketchButton variant="primary">Open in Spotify</SketchButton>
