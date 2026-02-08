@@ -58,7 +58,7 @@ export function AlbumDetailView({
   const isValidUuid = album.id && album.id.length > 10;
 
   // Check if user already reviewed (only query DB if we have a valid UUID)
-  const { hasReviewed } = useUserReview(isValidUuid ? album.id : null, userFid);
+  const { hasReviewed } = useUserReview(isValidUuid ? album.id ?? null : null, userFid);
 
   // Can write review if: in listening phase AND hasn't reviewed yet
   const showWriteReviewButton = canReview && !hasReviewed;

@@ -81,7 +81,7 @@ async function getAccessToken(): Promise<string> {
 /**
  * Extract Spotify album ID from various URL formats
  */
-export function extractSpotifyAlbumId(url: string): string | null {
+function extractSpotifyAlbumId(url: string): string | null {
   // Handle various Spotify URL formats:
   // https://open.spotify.com/album/4LH4d3cOWNNsVw41Gqt2kv
   // https://open.spotify.com/album/4LH4d3cOWNNsVw41Gqt2kv?si=xxx

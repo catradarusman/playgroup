@@ -58,8 +58,12 @@ export function useUserReview(albumId: string | null, fid: number | null) {
       return;
     }
 
+    // Capture non-null values for the async function
+    const currentAlbumId = albumId;
+    const currentFid = fid;
+
     async function check() {
-      const review = await getUserReview(albumId, fid);
+      const review = await getUserReview(currentAlbumId, currentFid);
       setHasReviewed(!!review);
       setIsLoading(false);
     }

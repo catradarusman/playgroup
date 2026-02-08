@@ -94,9 +94,11 @@ export function useCurrentAlbum(cycleId: string | null) {
       return;
     }
 
+    const id = cycleId; // Capture for closure after null check
+
     async function load() {
       try {
-        const data = await getCycleAlbum(cycleId);
+        const data = await getCycleAlbum(id);
         if (data) {
           setAlbum({
             id: data.id,
@@ -176,8 +178,10 @@ export function useListenerCount(cycleId: string | null) {
   useEffect(() => {
     if (!cycleId) return;
 
+    const id = cycleId; // Capture for closure after null check
+
     async function load() {
-      const c = await getListenerCount(cycleId);
+      const c = await getListenerCount(id);
       setCount(c);
     }
 

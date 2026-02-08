@@ -72,8 +72,11 @@ export function useUserSubmissionCount(fid: number | null, cycleId: string | nul
       return;
     }
 
+    const currentFid = fid;
+    const currentCycleId = cycleId;
+
     async function load() {
-      const c = await getUserSubmissionCount(fid, cycleId);
+      const c = await getUserSubmissionCount(currentFid, currentCycleId);
       setCount(c);
       setIsLoading(false);
     }

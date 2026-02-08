@@ -46,7 +46,7 @@ export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormP
       albumId,
       fid: user.fid,
       username: user.username || 'anon',
-      pfp: user.pfp_url || null,
+      pfp: user.pfpUrl || null,
       rating,
       text,
       favoriteTrack: favoriteTrack || null,
