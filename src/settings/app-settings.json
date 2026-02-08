@@ -1,13 +1,13 @@
 {
-  "name": "replace-this",
-  "shortName": "replace-this",
-  "subtitle": "replace-this",
-  "description": "replace-this",
-  "shortDescription": "replace-this",
-  "primaryCategory": "utility",
-  "tags": [],
+  "name": "26 Albums",
+  "shortName": "26 Albums",
+  "subtitle": "Slow listening community",
+  "description": "A music community that votes on 1 album every 2 weeks. Resist algorithmic consumption. Respect music through slow, collective listening. 26 albums a year. Zero algorithms.",
+  "shortDescription": "Vote on albums. Listen together. Review as a community.",
+  "primaryCategory": "social",
+  "tags": ["music", "community", "albums", "reviews", "voting"],
   "splashBackgroundColor": "#000000",
-  "tagline": "replace-this",
-  "requiredChains": ["eip155:8453", "eip155:1"],
-  "shareButtonTitle": "Launch App"
+  "tagline": "26 albums. Zero algorithms.",
+  "requiredChains": [],
+  "shareButtonTitle": "Listen With Us"
 }

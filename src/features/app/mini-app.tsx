@@ -24,7 +24,7 @@ const mockCycleState = {
     coverUrl: 'https://api.dicebear.com/9.x/shapes/svg?seed=okcomputer&backgroundColor=1a1a2e',
     spotifyUrl: 'https://open.spotify.com/album/...',
     weekNumber: 12,
-    avgRating: 8.3,
+    avgRating: 4.2,
     totalReviews: 14,
     mostLovedTrack: 'Paranoid Android',
     mostLovedTrackVotes: 7,
@@ -52,7 +52,7 @@ const mockReviews = [
     user: 'alex_musichead',
     displayName: 'Alex',
     pfp: 'https://api.dicebear.com/9.x/lorelei/svg?seed=alex',
-    rating: 8,
+    rating: 4,
     text: 'This album still sounds futuristic 25 years later. The production on Paranoid Android is insane...',
     favoriteTrack: 'Paranoid Android',
     daysAgo: 2,
@@ -62,7 +62,7 @@ const mockReviews = [
     user: 'jordan_curator',
     displayName: 'Jordan',
     pfp: 'https://api.dicebear.com/9.x/lorelei/svg?seed=jordan',
-    rating: 9,
+    rating: 5,
     text: 'Radiohead\'s masterpiece. Every track flows perfectly. The themes of technology anxiety feel more relevant now than in 1997...',
     favoriteTrack: 'Let Down',
     daysAgo: 1,
@@ -72,7 +72,7 @@ const mockReviews = [
     user: 'vinyllover',
     displayName: 'Vinyl Lover',
     pfp: 'https://api.dicebear.com/9.x/lorelei/svg?seed=vinyl',
-    rating: 7,
+    rating: 3,
     text: 'Gorgeous textures throughout. Not my favorite Radiohead but I get why it\'s a classic.',
     favoriteTrack: 'No Surprises',
     daysAgo: 3,
@@ -80,11 +80,11 @@ const mockReviews = [
 ];
 
 const mockPastAlbums = [
-  { id: 1, title: 'Loveless', artist: 'My Bloody Valentine', avgRating: 8.7, reviews: 23, weekNumber: 11 },
-  { id: 2, title: 'Remain in Light', artist: 'Talking Heads', avgRating: 9.1, reviews: 31, weekNumber: 10 },
-  { id: 3, title: 'Homogenic', artist: 'Björk', avgRating: 8.4, reviews: 19, weekNumber: 9 },
-  { id: 4, title: 'Kind of Blue', artist: 'Miles Davis', avgRating: 9.3, reviews: 28, weekNumber: 8 },
-  { id: 5, title: 'The Epic', artist: 'Kamasi Washington', avgRating: 8.1, reviews: 15, weekNumber: 7 },
+  { id: 1, title: 'Loveless', artist: 'My Bloody Valentine', avgRating: 4.4, reviews: 23, weekNumber: 11 },
+  { id: 2, title: 'Remain in Light', artist: 'Talking Heads', avgRating: 4.6, reviews: 31, weekNumber: 10 },
+  { id: 3, title: 'Homogenic', artist: 'Björk', avgRating: 4.2, reviews: 19, weekNumber: 9 },
+  { id: 4, title: 'Kind of Blue', artist: 'Miles Davis', avgRating: 4.7, reviews: 28, weekNumber: 8 },
+  { id: 5, title: 'The Epic', artist: 'Kamasi Washington', avgRating: 4.1, reviews: 15, weekNumber: 7 },
 ];
 
 const mockAlbumTracks = [
@@ -302,20 +302,20 @@ function ReviewForm({
         {/* Rating */}
         <div>
           <p className="sketch-text text-sm mb-2">Your Rating</p>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 onClick={() => setRating(n)}
-                className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
-                  n <= rating ? 'bg-purple-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
+                className={`w-10 h-10 rounded-lg text-lg font-medium transition-colors ${
+                  n <= rating ? 'bg-white text-black border-2 border-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                 }`}
               >
                 {n}
               </button>
             ))}
           </div>
-          {rating > 0 && <p className="text-sm mt-1 opacity-60">{rating}/10</p>}
+          {rating > 0 && <p className="text-sm mt-1 opacity-60">{rating}/5</p>}
         </div>
 
         {/* Review text */}
@@ -424,7 +424,7 @@ function AlbumDetailView({
         <SketchHeading level={4}>Community Stats</SketchHeading>
         <div className="grid grid-cols-2 gap-4 mt-3">
           <div>
-            <p className="text-2xl font-bold">{album.avgRating}/10</p>
+            <p className="text-2xl font-bold">{album.avgRating}/5</p>
             <p className="sketch-text text-xs opacity-60">Average • {album.totalReviews} reviews</p>
           </div>
           <div>
@@ -454,7 +454,7 @@ function AlbumDetailView({
                   <span className="font-medium">@{review.user}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold">{review.rating}/10</span>
+                  <span className="font-bold">{review.rating}/5</span>
                   <span className="text-xs opacity-50">{review.daysAgo}d ago</span>
                 </div>
               </div>

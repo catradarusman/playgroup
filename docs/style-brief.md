@@ -1,15 +1,28 @@
 # Branding Brief
 
-> This file is populated during Phase 3 (Branding Discussion) based on user preferences.
+> This file is populated during Phase 2 (Theming) based on user preferences.
 
 ## Color Scheme
 
-<!-- User's preferred colors (e.g., "purple and cyan", "warm orange tones") -->
+Monochrome palette:
+- **Primary**: Pure black (#000000) and white (#FFFFFF)
+- **Greys**: Spectrum of greys for depth and hierarchy
+- **Accents**: Subtle grey gradients for visual interest
 
 ## Visual Style
 
-<!-- User's preferred vibe (e.g., "playful and colorful", "sleek and modern", "retro pixel art") -->
+- **Clean & Minimal**: Let the album art be the only color
+- **Dark Mode**: Deep black backgrounds
+- **Futuristic**: Sharp edges, high contrast, sleek typography
+- **Monochrome**: Black, white, grey only - no colors
 
 ## Additional Notes
 
-<!-- Any other branding preferences or inspiration mentioned by the user -->
+- The monochrome aesthetic lets the colorful album artwork pop as the focal point
+- Futuristic vibe aligns with the "resisting algorithms" ethos - intentional, curated, human
+- High contrast for excellent readability
+- Minimal visual noise - focused on content
+
+## User's Words
+
+"clean and minimal with dark vibe, monochrome black white grey and futuristic"

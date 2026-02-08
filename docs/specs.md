@@ -19,13 +19,13 @@
 
 ## Visual Style
 
-| Field               | Value                       |
-| ------------------- | --------------------------- |
-| **Vibe**            | TBD - gathering in Phase 2  |
-| **Colors**          | TBD - gathering in Phase 2  |
-| **Style Direction** | TBD - gathering in Phase 2  |
+| Field               | Value                                              |
+| ------------------- | -------------------------------------------------- |
+| **Vibe**            | Clean, minimal, dark, futuristic                   |
+| **Colors**          | Monochrome - black, white, grey                    |
+| **Style Direction** | Dark mode, high contrast, sleek futuristic feel    |
 
-**User's Words**: "[to be captured in Phase 2]"
+**User's Words**: "clean and minimal with dark vibe, monochrome black white grey and futuristic"
 
 ---
 
@@ -51,7 +51,7 @@
 - [x] **Voting System**: Upvote albums, one vote per album, unlimited total votes
 - [x] **Winner Selection**: Auto-select highest votes at Friday 10pm WIB (tiebreakers: fewest wins → earliest submission)
 - [x] **Current Album Display**: Hero card with album art, artist, Spotify link, countdown
-- [x] **Review System**: 1-10 rating, 50+ char text, optional favorite track picker
+- [x] **Review System**: 1-5 rating, 50+ char text, optional favorite track picker
 - [x] **Album Detail Pages**: Stats (avg rating, most loved track), full reviews list
 - [x] **The 26 Archive**: Visual 26-square progress grid, past albums with ratings
 - [x] **How It Works**: 3-step onboarding for new users
@@ -128,7 +128,7 @@
 ### Share Scenarios
 
 1. **Share Current Album**: "We're listening to [Album] by [Artist] - Week X of 26"
-2. **Share Album Review**: "I gave [Album] a [X]/10 - [excerpt]"
+2. **Share Album Review**: "I gave [Album] a [X]/5 - [excerpt]"
 3. **Share Our Journey**: "We've listened to X albums together in 2025"
 
 ---
@@ -179,3 +179,5 @@
 | Timestamp  | Phase   | Description                                          |
 | ---------- | ------- | ---------------------------------------------------- |
 | 2025-02-08 | Phase 1 | Initial spec created from detailed user requirements |
+| 2025-02-08 | Phase 2 | Changed rating from 1-10 to 1-5 scale                |
+| 2025-02-08 | Phase 2 | Theme defined: dark monochrome futuristic            |
