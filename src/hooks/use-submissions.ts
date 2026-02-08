@@ -90,6 +90,7 @@ export function useSubmitAlbum() {
       artist: string;
       coverUrl: string;
       spotifyUrl: string;
+      tracks?: string[];
       cycleId: string;
       fid: number;
       username: string;

@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H4, P, Button, Input } from '@neynar/ui';
+import { Card, CardContent, H4, P, Button, Input, Skeleton } from '@neynar/ui';
 import { useSubmitAlbum } from '@/hooks/use-submissions';
-import { MOCK_PREVIEW_ALBUM } from '@/data/mocks';
 
 interface SubmissionFormProps {
   onClose: () => void;
@@ -20,6 +19,7 @@ interface PreviewAlbum {
   artist: string;
   coverUrl: string;
   spotifyUrl: string;
+  tracks: string[];
 }
 
 export function SubmissionForm({
@@ -30,43 +30,53 @@ export function SubmissionForm({
   userFid,
   username,
 }: SubmissionFormProps) {
-  const [step, setStep] = useState<'input' | 'preview' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'loading' | 'preview' | 'success'>('input');
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [previewAlbum, setPreviewAlbum] = useState<PreviewAlbum | null>(null);
 
   const { submit, isSubmitting, error: submitError } = useSubmitAlbum();
 
-  // Extract Spotify album ID from URL
-  const extractSpotifyId = (url: string): string | null => {
-    const match = url.match(/album\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : null;
-  };
-
   const handlePaste = async () => {
-    if (!spotifyUrl.includes('spotify.com/album')) {
+    if (!spotifyUrl.includes('spotify.com/album') && !spotifyUrl.includes('spotify:album:')) {
       setError('Please paste a Spotify album link');
       return;
     }
 
-    const spotifyId = extractSpotifyId(spotifyUrl);
-    if (!spotifyId) {
-      setError('Invalid Spotify album link');
-      return;
-    }
-
     setError(null);
+    setStep('loading');
 
-    // For now, use mock data since Spotify API requires auth
-    // In production, you'd fetch from Spotify API here
-    setPreviewAlbum({
-      spotifyId,
-      title: MOCK_PREVIEW_ALBUM.title,
-      artist: MOCK_PREVIEW_ALBUM.artist,
-      coverUrl: MOCK_PREVIEW_ALBUM.coverUrl,
-      spotifyUrl,
-    });
-    setStep('preview');
+    try {
+      // Fetch album metadata from Spotify API
+      const response = await fetch(`/api/spotify/album?url=${encodeURIComponent(spotifyUrl)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 503 && data.configured === false) {
+          // Spotify not configured - show helpful error
+          setError('Spotify API not configured yet. Ask the admin to add credentials.');
+          setStep('input');
+          return;
+        }
+        setError(data.error || 'Failed to fetch album');
+        setStep('input');
+        return;
+      }
+
+      setPreviewAlbum({
+        spotifyId: data.spotifyId,
+        title: data.title,
+        artist: data.artist,
+        coverUrl: data.coverUrl,
+        spotifyUrl: data.spotifyUrl,
+        tracks: data.tracks || [],
+      });
+      setStep('preview');
+    } catch (err) {
+      console.error('Error fetching album:', err);
+      setError('Failed to fetch album. Please try again.');
+      setStep('input');
+    }
   };
 
   const handleSubmit = async () => {
@@ -81,6 +91,7 @@ export function SubmissionForm({
       artist: previewAlbum.artist,
       coverUrl: previewAlbum.coverUrl,
       spotifyUrl: previewAlbum.spotifyUrl,
+      tracks: previewAlbum.tracks,
       cycleId,
       fid: userFid,
       username,
@@ -96,15 +107,13 @@ export function SubmissionForm({
     }
   };
 
-  const displayAlbum = previewAlbum || MOCK_PREVIEW_ALBUM;
-
-  if (step === 'success') {
+  if (step === 'success' && previewAlbum) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center space-y-2">
             <p className="text-3xl">✓</p>
-            <P className="font-bold text-white">{displayAlbum.title} submitted!</P>
+            <P className="font-bold text-white">{previewAlbum.title} submitted!</P>
             <P className="text-sm text-gray-400">Keep voting for other albums.</P>
           </div>
         </CardContent>
@@ -112,7 +121,27 @@ export function SubmissionForm({
     );
   }
 
-  if (step === 'preview') {
+  if (step === 'loading') {
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="text-gray-400">Fetching album from Spotify...</span>
+          </div>
+          <div className="flex gap-4 items-center">
+            <Skeleton className="w-20 h-20 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (step === 'preview' && previewAlbum) {
     return (
       <Card>
         <CardContent className="p-4 space-y-4">
@@ -122,10 +151,10 @@ export function SubmissionForm({
           </div>
 
           <div className="flex gap-4 items-center">
-            {displayAlbum.coverUrl ? (
+            {previewAlbum.coverUrl ? (
               <img
-                src={displayAlbum.coverUrl}
-                alt={displayAlbum.title}
+                src={previewAlbum.coverUrl}
+                alt={previewAlbum.title}
                 className="w-20 h-20 rounded-lg flex-shrink-0 object-cover"
               />
             ) : (
@@ -135,8 +164,9 @@ export function SubmissionForm({
               />
             )}
             <div>
-              <P className="font-bold text-white">{displayAlbum.title}</P>
-              <P className="text-gray-400">{displayAlbum.artist}</P>
+              <P className="font-bold text-white">{previewAlbum.title}</P>
+              <P className="text-gray-400">{previewAlbum.artist}</P>
+              <P className="text-xs text-gray-600">{previewAlbum.tracks.length} tracks</P>
             </div>
           </div>
 

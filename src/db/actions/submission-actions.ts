@@ -13,6 +13,7 @@ export async function submitAlbum(data: {
   artist: string;
   coverUrl: string;
   spotifyUrl: string;
+  tracks?: string[];
   cycleId: string;
   fid: number;
   username: string;
@@ -58,6 +59,7 @@ export async function submitAlbum(data: {
       artist: data.artist,
       coverUrl: data.coverUrl,
       spotifyUrl: data.spotifyUrl,
+      tracks: data.tracks ?? null,
       cycleId: data.cycleId,
       submittedByFid: data.fid,
       submittedByUsername: data.username,

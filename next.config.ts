@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.imgur.com",
       },
+      {
+        protocol: "https",
+        hostname: "i.scdn.co", // Spotify album covers
+      },
     ],
   },
   devIndicators: false,
