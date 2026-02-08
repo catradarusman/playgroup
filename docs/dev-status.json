@@ -3,7 +3,7 @@
   "readyToPublish": true,
   "currentPhase": 6,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-08T08:34:53.434Z",
+  "lastUpdatedAt": "2026-02-08T09:15:00.000Z",
   "completedAt": "2026-02-08T08:45:00.000Z",
   "phases": {
     "1": {
@@ -120,10 +120,33 @@
     },
     "6": {
       "name": "post-launch",
-      "displayName": null,
+      "displayName": "Post-Launch Enhancements",
       "status": "in_progress",
-      "tasks": {}
+      "tasks": {
+        "spotify-api-integrated": "completed"
+      },
+      "enhancements": {
+        "spotify-api": {
+          "type": "external-api",
+          "description": "Auto-fetch album metadata, cover art, and track listings from Spotify",
+          "status": "completed",
+          "files": [
+            "src/lib/spotify.ts",
+            "src/app/api/spotify/album/route.ts"
+          ],
+          "envVars": [
+            "SPOTIFY_CLIENT_ID",
+            "SPOTIFY_CLIENT_SECRET"
+          ]
+        }
+      }
     }
   },
-  "metadata": {}
+  "metadata": {
+    "appName": "Playgroup",
+    "description": "Music community app - 26 albums per year through community voting",
+    "theme": "dark monochrome futuristic",
+    "externalApis": ["Spotify Web API"],
+    "databaseTables": ["cycles", "albums", "votes", "reviews"]
+  }
 }

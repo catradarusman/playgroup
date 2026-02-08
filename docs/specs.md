@@ -2,6 +2,7 @@
 
 > **Created**: 2025-02-08
 > **Last Updated**: 2025-02-08
+> **Status**: ✅ MVP Complete - Ready for Production
 
 ---
 
@@ -45,18 +46,20 @@
 
 ## Core Features
 
-### Must-Have (MVP)
+### Must-Have (MVP) ✅ ALL COMPLETE
 
-- [x] **Album Submission**: Paste Spotify link → Preview → Submit (max 3 per cycle)
+- [x] **Album Submission**: Paste Spotify link → Auto-fetch metadata → Preview → Submit (max 3 per cycle)
+- [x] **Spotify API Integration**: Auto-fetches album title, artist, cover art, and track listing
 - [x] **Voting System**: Upvote albums, one vote per album, unlimited total votes
 - [x] **Winner Selection**: Auto-select highest votes at Friday 10pm WIB (tiebreakers: fewest wins → earliest submission)
 - [x] **Current Album Display**: Hero card with album art, artist, Spotify link, countdown
-- [x] **Review System**: 1-5 rating, 50+ char text, optional favorite track picker
+- [x] **Review System**: 1-5 rating, 50+ char text, favorite track picker (with real Spotify tracks)
 - [x] **Album Detail Pages**: Stats (avg rating, most loved track), full reviews list
 - [x] **The 26 Archive**: Visual 26-square progress grid, past albums with ratings
 - [x] **How It Works**: 3-step onboarding for new users
 - [x] **Phase-Aware UI**: Different states for voting vs listening vs reviewing
 - [x] **Countdown Timer**: Live countdown to voting close / listening end
+- [x] **Share Buttons**: 3 personalized share images (album, review stats, journey progress)
 
 ### Submission Rules (Enforced)
 
@@ -85,6 +88,7 @@
 
 ### Nice-to-Have (Post-MVP)
 
+- [ ] **Auto Winner Selection Cron**: Scheduled job at Friday 10pm WIB
 - [ ] **Genre Filtering**: Filter submissions/archive by genre
 - [ ] **Year Selector**: Browse archive by year (2024, 2025, etc.)
 - [ ] **Losing Album Second Chance**: Albums that don't win persist for one more cycle
@@ -110,10 +114,10 @@
 
 ### Key Entities
 
-- **Cycles**: weekNumber, startDate, endDate, winnerId, status
-- **Albums**: spotifyId, title, artist, coverUrl, submittedBy, cycleId, status (voting/selected/lost)
-- **Votes**: albumId, oderId, createdAt
-- **Reviews**: albumId, oderId, rating, text, favoriteTrack, createdAt
+- **Cycles**: weekNumber, year, phase, startDate, endDate, votingEndsAt, winnerId
+- **Albums**: spotifyId, title, artist, coverUrl, spotifyUrl, tracks[], cycleId, submittedByFid, submittedByUsername, status, avgRating, totalReviews, mostLovedTrack
+- **Votes**: albumId, voterFid, createdAt
+- **Reviews**: albumId, reviewerFid, reviewerUsername, reviewerPfp, rating, reviewText, favoriteTrack, hasListened, createdAt
 
 ---
 
@@ -139,17 +143,27 @@
 | ------------------------ | -------------------------------------------------- |
 | **User Skill Level**     | Intermediate                                       |
 | **Platform Focus**       | Mobile-first (Farcaster mini app)                  |
-| **Special Requirements** | Spotify API for album metadata, Cron for auto-selection |
+| **Special Requirements** | Spotify API (Client Credentials flow), Cron for auto-selection |
+
+### External APIs
+
+| API | Purpose | Auth Method | Status |
+| --- | ------- | ----------- | ------ |
+| **Spotify Web API** | Fetch album metadata, cover art, track listings | Client Credentials (no user login) | ✅ Integrated |
+
+**Required Environment Variables:**
+- `SPOTIFY_CLIENT_ID` - From Spotify Developer Dashboard
+- `SPOTIFY_CLIENT_SECRET` - From Spotify Developer Dashboard
 
 ### Risk Mitigations
 
-| Risk                  | Mitigation                                         |
-| --------------------- | -------------------------------------------------- |
-| Spotify API breaks    | Cache album metadata after first fetch             |
-| Cron job fails        | Manual fallback, monitoring alert                  |
-| No submissions        | Creator seeds first 2 cycles with albums           |
-| Low review rate       | Acceptable for MVP                                 |
-| Duplicate spam        | DB constraint prevents, manual ban if needed       |
+| Risk                  | Mitigation                                         | Status |
+| --------------------- | -------------------------------------------------- | ------ |
+| Spotify API breaks    | Metadata cached in DB after first fetch            | ✅ Done |
+| Cron job fails        | Manual fallback via `selectWinner()` action        | Ready  |
+| No submissions        | Creator seeds first 2 cycles with albums           | Ready  |
+| Low review rate       | Acceptable for MVP                                 | OK     |
+| Duplicate spam        | DB constraint prevents, manual ban if needed       | ✅ Done |
 
 ---
 
@@ -181,3 +195,7 @@
 | 2025-02-08 | Phase 1 | Initial spec created from detailed user requirements |
 | 2025-02-08 | Phase 2 | Changed rating from 1-10 to 1-5 scale                |
 | 2025-02-08 | Phase 2 | Theme defined: dark monochrome futuristic            |
+| 2025-02-08 | Phase 5 | All database features wired (cycles, albums, votes, reviews) |
+| 2025-02-08 | Phase 5 | Share buttons wired with personalized images         |
+| 2025-02-08 | Phase 6 | Spotify API integration added (auto-fetch metadata)  |
+| 2025-02-08 | Phase 6 | Track listings now stored with albums for review picker |

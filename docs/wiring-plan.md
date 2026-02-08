@@ -2,29 +2,27 @@
 
 > Created: Phase 4 - Feature Planning
 > App: Playgroup (music community voting app)
-
-## Features Overview
-
-| Feature | Type | Mock | Priority |
-|---------|------|------|----------|
-| Cycles & Albums | database | `MOCK_CYCLE_STATE`, `MOCK_PAST_ALBUMS` | P0 |
-| Submissions & Voting | database | `MOCK_SUBMISSIONS` | P0 |
-| Reviews | database | `MOCK_REVIEWS` | P0 |
-| Album Tracks | database | `MOCK_ALBUM_TRACKS` | P1 |
-| User Identity | social | (uses `useFarcasterUser`) | P0 |
-| Share Button | sharing | (mandatory) | P0 |
+> **Status**: ✅ ALL FEATURES IMPLEMENTED
 
 ---
 
-## Feature Implementation Details
+## Features Overview
 
-### 1. Cycles & Albums (Database)
+| Feature | Type | Status | Files |
+|---------|------|--------|-------|
+| Cycles & Albums | database | ✅ Complete | `cycle-actions.ts`, `use-cycle.ts` |
+| Submissions & Voting | database | ✅ Complete | `submission-actions.ts`, `use-submissions.ts` |
+| Reviews | database | ✅ Complete | `review-actions.ts`, `use-reviews.ts` |
+| Spotify API | external | ✅ Complete | `src/lib/spotify.ts`, `/api/spotify/album` |
+| User Identity | social | ✅ Complete | `useFarcasterUser()` integrated |
+| Share Buttons | sharing | ✅ Complete | 3 personalized share images |
 
-**Type**: database
-**Mocks**: `MOCK_CYCLE_STATE`, `MOCK_PAST_ALBUMS`
-**Used by**: `now-playing-tab.tsx`, `archive-tab.tsx`, `album-detail-view.tsx`
+---
 
-**Schema Tables**:
+## Implementation Summary
+
+### Database Schema (`src/db/schema.ts`)
+
 ```typescript
 // cycles - tracks 2-week listening cycles
 export const cycles = pgTable("cycles", {
@@ -35,7 +33,7 @@ export const cycles = pgTable("cycles", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   votingEndsAt: timestamp("voting_ends_at").notNull(),
-  winnerId: uuid("winner_id"), // references albums.id when selected
+  winnerId: uuid("winner_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -47,7 +45,8 @@ export const albums = pgTable("albums", {
   artist: text("artist").notNull(),
   coverUrl: text("cover_url").notNull(),
   spotifyUrl: text("spotify_url").notNull(),
-  cycleId: uuid("cycle_id").notNull(), // which cycle this was submitted in
+  tracks: jsonb("tracks"), // string[] from Spotify API
+  cycleId: uuid("cycle_id").notNull(),
   submittedByFid: integer("submitted_by_fid").notNull(),
   submittedByUsername: text("submitted_by_username").notNull(),
   status: text("status").notNull(), // 'voting' | 'selected' | 'lost'
@@ -57,29 +56,7 @@ export const albums = pgTable("albums", {
   mostLovedTrackVotes: integer("most_loved_track_votes").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-```
 
-**Server Actions** (`src/db/actions/cycle-actions.ts`):
-- `getCurrentCycle()` - Get active cycle with phase & countdown
-- `getCycleAlbum(cycleId)` - Get the winning album for a cycle
-- `getPastAlbums(year)` - Get all past winners for archive
-- `getAlbumById(albumId)` - Get album with full stats
-
-**Hooks** (`src/hooks/use-cycle.ts`):
-- `useCycle()` - Current cycle state with computed countdown
-- `useCurrentAlbum()` - Current/last winning album
-- `usePastAlbums()` - Archive albums list
-
----
-
-### 2. Submissions & Voting (Database)
-
-**Type**: database
-**Mock**: `MOCK_SUBMISSIONS`
-**Used by**: `vote-tab.tsx`, `submission-form.tsx`
-
-**Schema Tables**:
-```typescript
 // votes - one per user per album
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -87,37 +64,7 @@ export const votes = pgTable("votes", {
   voterFid: integer("voter_fid").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-```
 
-**Server Actions** (`src/db/actions/submission-actions.ts`):
-- `submitAlbum(spotifyUrl, fid, username)` - Submit album with validation
-- `getSubmissions(cycleId)` - Get all submissions for current voting
-- `getUserSubmissionCount(fid, cycleId)` - Check if user hit 3 limit
-- `castVote(albumId, fid)` - Cast vote (validates one per album)
-- `getUserVotes(fid, cycleId)` - Get user's votes this cycle
-- `selectWinner(cycleId)` - Auto-select winner (called by cron)
-
-**Validation Rules**:
-- Max 3 submissions per cycle per user
-- No duplicate spotify IDs in same cycle
-- No past winners (check albums with status='selected')
-- One vote per album per user (no un-voting)
-
-**Hooks** (`src/hooks/use-submissions.ts`):
-- `useSubmissions()` - Current submissions with vote counts
-- `useSubmitAlbum()` - Mutation for submitting
-- `useVote()` - Mutation for voting
-
----
-
-### 3. Reviews (Database)
-
-**Type**: database
-**Mock**: `MOCK_REVIEWS`
-**Used by**: `album-detail-view.tsx`, `review-form.tsx`
-
-**Schema Tables**:
-```typescript
 // reviews - one per user per album
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -126,122 +73,150 @@ export const reviews = pgTable("reviews", {
   reviewerUsername: text("reviewer_username").notNull(),
   reviewerPfp: text("reviewer_pfp"),
   rating: integer("rating").notNull(), // 1-5
-  text: text("text").notNull(), // min 50 chars
+  reviewText: text("review_text").notNull(), // min 50 chars
   favoriteTrack: text("favorite_track"),
   hasListened: boolean("has_listened").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 ```
 
-**Server Actions** (`src/db/actions/review-actions.ts`):
-- `submitReview(albumId, fid, rating, text, favoriteTrack)` - Submit review
-- `getAlbumReviews(albumId)` - Get reviews for album
-- `getUserReview(albumId, fid)` - Check if user already reviewed
-- `getAlbumStats(albumId)` - Compute avg rating, most loved track
+---
 
-**Validation Rules**:
-- One review per album per user
-- Rating must be 1-5
-- Text must be 50+ characters
-- Reviews can be submitted anytime (late reviews allowed)
+### Server Actions
 
-**Hooks** (`src/hooks/use-reviews.ts`):
+#### Cycle Actions (`src/db/actions/cycle-actions.ts`)
+- `getCurrentCycle()` - Get active cycle with phase
+- `getCycleWithCountdown()` - Get cycle with computed countdown
+- `getCycleAlbum(cycleId)` - Get the winning album for a cycle
+- `getPastAlbums(year)` - Get all past winners for archive
+- `getAlbumById(albumId)` - Get album with full stats
+- `getListenerCount(cycleId)` - Count unique reviewers
+
+#### Submission Actions (`src/db/actions/submission-actions.ts`)
+- `submitAlbum(data)` - Submit album with Spotify metadata & tracks
+- `getSubmissions(cycleId)` - Get all submissions with vote counts
+- `getSubmissionsWithUserVotes(cycleId, fid)` - Include user's vote status
+- `getUserSubmissionCount(fid, cycleId)` - Check 3-per-cycle limit
+- `castVote(albumId, fid)` - Cast vote (one per album)
+- `selectWinner(cycleId)` - Auto-select winner by votes
+
+#### Review Actions (`src/db/actions/review-actions.ts`)
+- `submitReview(data)` - Submit review with rating & favorite track
+- `getAlbumReviews(albumId)` - Get all reviews for album
+- `getUserReview(albumId, fid)` - Check if user reviewed
+- `updateAlbumStats(albumId)` - Recalculate avg rating & most loved track
+
+---
+
+### React Hooks
+
+#### `src/hooks/use-cycle.ts`
+- `useCycle()` - Current cycle with live countdown (updates every minute)
+- `useCurrentAlbum(cycleId)` - Current/winning album for cycle
+- `usePastAlbums(year)` - Archive albums list
+- `useListenerCount(cycleId)` - Active listener count
+
+#### `src/hooks/use-submissions.ts`
+- `useSubmissions(cycleId, fid)` - Submissions with vote status
+- `useUserSubmissionCount(fid, cycleId)` - User's submission count
+- `useSubmitAlbum()` - Mutation for submitting (includes tracks)
+- `useVote()` - Mutation for voting
+
+#### `src/hooks/use-reviews.ts`
 - `useReviews(albumId)` - Reviews for an album
+- `useUserReview(albumId, fid)` - Check user's review
 - `useSubmitReview()` - Mutation for submitting
 
 ---
 
-### 4. Album Tracks (API/Caching)
+### Spotify API Integration
 
-**Type**: database (cached from Spotify)
-**Mock**: `MOCK_ALBUM_TRACKS`
-**Used by**: `review-form.tsx` (favorite track picker)
+#### `src/lib/spotify.ts`
+- `getAccessToken()` - Client Credentials flow (cached)
+- `extractSpotifyAlbumId(url)` - Parse album ID from various URL formats
+- `fetchAlbumMetadata(spotifyUrl)` - Returns: title, artist, coverUrl, tracks[], etc.
+- `isSpotifyConfigured()` - Check if credentials are set
 
-**Approach**: Cache Spotify album tracks in albums table as JSON
-```typescript
-// Add to albums table
-tracks: jsonb("tracks"), // string[] of track names
+#### `src/app/api/spotify/album/route.ts`
+- `GET /api/spotify/album?url=<spotify_url>` - Fetch album metadata
+
+**Environment Variables Required:**
+```
+SPOTIFY_CLIENT_ID=your_client_id
+SPOTIFY_CLIENT_SECRET=your_client_secret
 ```
 
-**Server Actions**:
-- `fetchAndCacheAlbumTracks(albumId, spotifyId)` - Fetch from Spotify API and cache
+---
 
-**Note**: Spotify API integration is a stretch goal. For MVP, tracks can be manually entered or omitted from the favorite track picker.
+### Share Buttons
+
+Three personalized share images via `share-manager`:
+
+| Location | Share Type | Data |
+|----------|-----------|------|
+| Now Playing Tab | `album` | albumTitle, artist, weekNumber, listeners |
+| Album Detail | `review` | albumTitle, artist, weekNumber, avgRating, totalReviews |
+| Archive Tab | `journey` | year, albumsCompleted, totalReviews, avgRating |
+
+Share image route: `src/app/api/share/image/[type]/route.tsx`
 
 ---
 
-### 5. User Identity (Social)
+## Component Wiring Summary
 
-**Type**: social
-**Mock**: None (implicit in mock data)
-**Used by**: All components for current user context
-
-**SDK/Hooks**:
-- `useFarcasterUser()` from `@/neynar-farcaster-sdk/mini` - Current user's FID, username, pfp
-- `useUser(fid)` from `@/neynar-web-sdk/neynar` - Fetch full profile for any user
-
-**Integration Points**:
-- Submission: Get `fid`, `username` from `useFarcasterUser()`
-- Reviews: Get `fid`, `username`, `pfpUrl` from `useFarcasterUser()`
-- Vote tracking: Store `fid` with votes
-- Display: Show usernames/pfps in UI
+| Component | Hooks Used | Data Source |
+|-----------|-----------|-------------|
+| `now-playing-tab.tsx` | `useCycle`, `useCurrentAlbum`, `useReviews`, `useListenerCount` | DB + fallback to mock |
+| `vote-tab.tsx` | `useCycle`, `useSubmissions`, `useVote`, `useUserSubmissionCount` | DB + fallback to mock |
+| `submission-form.tsx` | `useSubmitAlbum`, Spotify API | Spotify + DB |
+| `archive-tab.tsx` | `usePastAlbums`, `useReviews` | DB + fallback to mock |
+| `album-detail-view.tsx` | `useReviews`, `useUserReview` | DB + fallback to mock |
+| `review-form.tsx` | `useSubmitReview`, `useFarcasterUser` | DB + Farcaster |
 
 ---
 
-### 6. Share Button (Mandatory)
-
-**Type**: sharing
-**Delegate to**: `share-manager` subagent
-
-**Personalization Data Available**:
-- `albumTitle` - Current album title
-- `albumArtist` - Current album artist
-- `weekNumber` - Current week (1-26)
-- `avgRating` - Community average rating
-- `totalReviews` - Number of reviews
-- `phase` - 'voting' | 'listening'
-
-**Share Scenarios**:
-1. **Now Tab**: Share current listening album
-2. **Album Detail**: Share specific album with stats
-3. **Archive**: Share community journey stats
-
-**Components with Share Button**:
-- `now-playing-tab.tsx` - Main share button
-- `album-detail-view.tsx` - Album-specific share
-- `archive-tab.tsx` - Journey share
-
----
-
-## Implementation Order
-
-1. **Database Schema** - Create all tables
-2. **Cycle Actions** - Core cycle/album queries
-3. **Submission Actions** - Voting system
-4. **Review Actions** - Review system
-5. **Hooks** - Wire actions to components
-6. **User Integration** - Add Farcaster user context
-7. **Share Button** - Delegate to share-manager
-
----
-
-## Files to Create
+## Files Created/Modified
 
 ```
-src/db/schema.ts (edit - add tables)
-src/db/actions/cycle-actions.ts (new)
-src/db/actions/submission-actions.ts (new)
-src/db/actions/review-actions.ts (new)
-src/hooks/use-cycle.ts (new)
-src/hooks/use-submissions.ts (new)
-src/hooks/use-reviews.ts (new)
+✅ src/db/schema.ts - 4 tables (cycles, albums, votes, reviews)
+✅ src/db/actions/cycle-actions.ts - Cycle & album queries
+✅ src/db/actions/submission-actions.ts - Voting system
+✅ src/db/actions/review-actions.ts - Review system
+✅ src/hooks/use-cycle.ts - Cycle hooks
+✅ src/hooks/use-submissions.ts - Submission hooks
+✅ src/hooks/use-reviews.ts - Review hooks
+✅ src/lib/spotify.ts - Spotify API client
+✅ src/app/api/spotify/album/route.ts - Album metadata endpoint
+✅ src/features/app/components/*.tsx - All components wired
+✅ src/app/api/share/image/[type]/route.tsx - Share images
 ```
+
+---
+
+## Validation Rules Implemented
+
+### Submissions
+- ✅ Max 3 submissions per cycle per user
+- ✅ No duplicate Spotify IDs in same cycle
+- ✅ No past winners (status='selected')
+- ✅ Spotify links only (validated in form)
+
+### Voting
+- ✅ One vote per album per user
+- ✅ No un-voting (vote is permanent)
+- ✅ Only albums in 'voting' status
+
+### Reviews
+- ✅ One review per album per user
+- ✅ Rating must be 1-5
+- ✅ Text must be 50+ characters
+- ✅ Auto-updates album stats on submit
 
 ---
 
 ## Notes
 
-- **Countdown Timer**: Phase 5 will compute countdown from `votingEndsAt` timestamp
-- **Spotify API**: MVP can work without Spotify API by having users manually enter album info, or we integrate Spotify for auto-fetch
-- **Cron for Winner Selection**: Needs scheduled job at Friday 10pm WIB - can be implemented as API route called by external cron
-- **Tiebreaker Rules**: Fewest previous wins → earliest submission timestamp
+- **Mock Data Fallback**: Components use mock data when DB is empty (development/preview)
+- **Winner Selection**: Call `selectWinner(cycleId)` manually or via cron at Friday 10pm WIB
+- **Tiebreaker**: Highest votes → earliest submission timestamp
+- **Spotify Token**: Cached in memory, auto-refreshes before expiry
