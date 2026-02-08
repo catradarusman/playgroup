@@ -2,7 +2,7 @@
 
 > **Created**: 2025-02-08
 > **Last Updated**: 2025-02-08
-> **Status**: ✅ MVP Complete - Ready for Production
+> **Status**: ✅ MVP Complete - Awaiting Spotify Credentials for Production
 
 ---
 
@@ -149,11 +149,21 @@
 
 | API | Purpose | Auth Method | Status |
 | --- | ------- | ----------- | ------ |
-| **Spotify Web API** | Fetch album metadata, cover art, track listings | Client Credentials (no user login) | ✅ Integrated |
+| **Spotify Web API** | Fetch album metadata, cover art, track listings | Client Credentials (no user login) | ✅ Integrated (awaiting credentials) |
 
-**Required Environment Variables:**
+**⚠️ REQUIRED BEFORE PUBLISHING - Environment Variables:**
 - `SPOTIFY_CLIENT_ID` - From Spotify Developer Dashboard
 - `SPOTIFY_CLIENT_SECRET` - From Spotify Developer Dashboard
+
+**How to get Spotify credentials:**
+1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account
+3. Click "Create App"
+4. Fill in app name (e.g., "Playgroup") and description
+5. Set redirect URI to any valid URL (not used for Client Credentials)
+6. Check "Web API" checkbox
+7. Accept terms and create
+8. Copy **Client ID** and **Client Secret** from the app dashboard
 
 ### Risk Mitigations
 
@@ -199,3 +209,5 @@
 | 2025-02-08 | Phase 5 | Share buttons wired with personalized images         |
 | 2025-02-08 | Phase 6 | Spotify API integration added (auto-fetch metadata)  |
 | 2025-02-08 | Phase 6 | Track listings now stored with albums for review picker |
+| 2025-02-08 | Phase 6 | Fixed UUID validation bug (mock IDs vs real database UUIDs) |
+| 2025-02-08 | Phase 6 | Awaiting Spotify credentials before publishing |

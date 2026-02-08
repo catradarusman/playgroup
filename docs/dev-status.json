@@ -1,10 +1,11 @@
 {
   "schemaVersion": 1,
-  "readyToPublish": true,
+  "readyToPublish": false,
   "currentPhase": 6,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-08T09:15:00.000Z",
-  "completedAt": "2026-02-08T08:45:00.000Z",
+  "lastUpdatedAt": "2026-02-08T09:30:00.000Z",
+  "completedAt": null,
+  "publishBlocker": "Spotify API credentials required (SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET)",
   "phases": {
     "1": {
       "name": "planning",
@@ -123,13 +124,15 @@
       "displayName": "Post-Launch Enhancements",
       "status": "in_progress",
       "tasks": {
-        "spotify-api-integrated": "completed"
+        "spotify-api-integrated": "completed",
+        "uuid-bug-fixed": "completed",
+        "spotify-credentials-added": "pending"
       },
       "enhancements": {
         "spotify-api": {
           "type": "external-api",
           "description": "Auto-fetch album metadata, cover art, and track listings from Spotify",
-          "status": "completed",
+          "status": "awaiting-credentials",
           "files": [
             "src/lib/spotify.ts",
             "src/app/api/spotify/album/route.ts"
@@ -137,6 +140,18 @@
           "envVars": [
             "SPOTIFY_CLIENT_ID",
             "SPOTIFY_CLIENT_SECRET"
+          ],
+          "setupUrl": "https://developer.spotify.com/dashboard"
+        }
+      },
+      "bugFixes": {
+        "uuid-validation": {
+          "description": "Fixed PostgresError for invalid UUID syntax when using mock data",
+          "status": "completed",
+          "files": [
+            "src/features/app/components/archive-tab.tsx",
+            "src/features/app/components/album-detail-view.tsx",
+            "src/features/app/components/vote-tab.tsx"
           ]
         }
       }
@@ -148,5 +163,12 @@
     "theme": "dark monochrome futuristic",
     "externalApis": ["Spotify Web API"],
     "databaseTables": ["cycles", "albums", "votes", "reviews"]
+  },
+  "prePublishChecklist": {
+    "featuresComplete": true,
+    "databaseReady": true,
+    "shareButtonsWired": true,
+    "spotifyCredentials": false,
+    "testedWithRealData": false
   }
 }

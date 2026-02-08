@@ -2,7 +2,7 @@
 
 > Created: Phase 4 - Feature Planning
 > App: Playgroup (music community voting app)
-> **Status**: ✅ ALL FEATURES IMPLEMENTED
+> **Status**: ✅ ALL FEATURES IMPLEMENTED - Awaiting Spotify Credentials
 
 ---
 
@@ -13,7 +13,7 @@
 | Cycles & Albums | database | ✅ Complete | `cycle-actions.ts`, `use-cycle.ts` |
 | Submissions & Voting | database | ✅ Complete | `submission-actions.ts`, `use-submissions.ts` |
 | Reviews | database | ✅ Complete | `review-actions.ts`, `use-reviews.ts` |
-| Spotify API | external | ✅ Complete | `src/lib/spotify.ts`, `/api/spotify/album` |
+| Spotify API | external | ✅ Complete (needs credentials) | `src/lib/spotify.ts`, `/api/spotify/album` |
 | User Identity | social | ✅ Complete | `useFarcasterUser()` integrated |
 | Share Buttons | sharing | ✅ Complete | 3 personalized share images |
 
@@ -140,11 +140,13 @@ export const reviews = pgTable("reviews", {
 #### `src/app/api/spotify/album/route.ts`
 - `GET /api/spotify/album?url=<spotify_url>` - Fetch album metadata
 
-**Environment Variables Required:**
+**⚠️ Environment Variables Required (BEFORE PUBLISHING):**
 ```
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 ```
+
+**Get credentials at:** [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
 
 ---
 
@@ -217,6 +219,19 @@ Share image route: `src/app/api/share/image/[type]/route.tsx`
 ## Notes
 
 - **Mock Data Fallback**: Components use mock data when DB is empty (development/preview)
+- **UUID Validation**: Components check for valid UUIDs before querying DB (prevents errors with mock data)
 - **Winner Selection**: Call `selectWinner(cycleId)` manually or via cron at Friday 10pm WIB
 - **Tiebreaker**: Highest votes → earliest submission timestamp
 - **Spotify Token**: Cached in memory, auto-refreshes before expiry
+
+---
+
+## Pre-Publishing Checklist
+
+- [x] All features implemented
+- [x] Database schema pushed
+- [x] Share buttons wired
+- [x] UUID validation bug fixed
+- [ ] **Spotify credentials added** ← BLOCKING
+- [ ] Test album submission with real Spotify link
+- [ ] Publish app
