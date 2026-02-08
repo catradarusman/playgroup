@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H4, P, Button, Input, Skeleton } from '@neynar/ui';
+import { Card, CardContent, H4, P, Button, Input } from '@neynar/ui';
 import { useSubmitAlbum } from '@/hooks/use-submissions';
 
 interface SubmissionFormProps {
@@ -13,15 +13,6 @@ interface SubmissionFormProps {
   username: string;
 }
 
-interface PreviewAlbum {
-  spotifyId: string;
-  title: string;
-  artist: string;
-  coverUrl: string;
-  spotifyUrl: string;
-  tracks: string[];
-}
-
 export function SubmissionForm({
   onClose,
   submissionsUsed,
@@ -30,68 +21,73 @@ export function SubmissionForm({
   userFid,
   username,
 }: SubmissionFormProps) {
-  const [step, setStep] = useState<'input' | 'loading' | 'preview' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'preview' | 'success'>('input');
   const [spotifyUrl, setSpotifyUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [artist, setArtist] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [previewAlbum, setPreviewAlbum] = useState<PreviewAlbum | null>(null);
 
   const { submit, isSubmitting, error: submitError } = useSubmitAlbum();
 
-  const handlePaste = async () => {
+  // Extract Spotify album ID from URL
+  const extractSpotifyId = (url: string): string | null => {
+    const patterns = [
+      /spotify\.com\/album\/([a-zA-Z0-9]+)/,
+      /spotify:album:([a-zA-Z0-9]+)/,
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  const handleNext = () => {
+    // Validate Spotify link
     if (!spotifyUrl.includes('spotify.com/album') && !spotifyUrl.includes('spotify:album:')) {
-      setError('Please paste a Spotify album link');
+      setError('Please paste a valid Spotify album link');
+      return;
+    }
+
+    const spotifyId = extractSpotifyId(spotifyUrl);
+    if (!spotifyId) {
+      setError('Invalid Spotify album link');
       return;
     }
 
     setError(null);
-    setStep('loading');
-
-    try {
-      // Fetch album metadata from Spotify API
-      const response = await fetch(`/api/spotify/album?url=${encodeURIComponent(spotifyUrl)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 503 && data.configured === false) {
-          // Spotify not configured - show helpful error
-          setError('Spotify API not configured yet. Ask the admin to add credentials.');
-          setStep('input');
-          return;
-        }
-        setError(data.error || 'Failed to fetch album');
-        setStep('input');
-        return;
-      }
-
-      setPreviewAlbum({
-        spotifyId: data.spotifyId,
-        title: data.title,
-        artist: data.artist,
-        coverUrl: data.coverUrl,
-        spotifyUrl: data.spotifyUrl,
-        tracks: data.tracks || [],
-      });
-      setStep('preview');
-    } catch (err) {
-      console.error('Error fetching album:', err);
-      setError('Failed to fetch album. Please try again.');
-      setStep('input');
-    }
+    setStep('preview');
   };
 
   const handleSubmit = async () => {
-    if (!previewAlbum || !cycleId || !userFid) {
+    // Validate fields
+    if (!title.trim()) {
+      setError('Please enter the album title');
+      return;
+    }
+    if (!artist.trim()) {
+      setError('Please enter the artist name');
+      return;
+    }
+    if (!cycleId || !userFid) {
       setError('Missing required data');
       return;
     }
 
+    const spotifyId = extractSpotifyId(spotifyUrl);
+    if (!spotifyId) {
+      setError('Invalid Spotify link');
+      return;
+    }
+
+    setError(null);
+
     const result = await submit({
-      spotifyId: previewAlbum.spotifyId,
-      title: previewAlbum.title,
-      artist: previewAlbum.artist,
-      coverUrl: previewAlbum.coverUrl,
-      spotifyUrl: previewAlbum.spotifyUrl,
-      tracks: previewAlbum.tracks,
+      spotifyId,
+      title: title.trim(),
+      artist: artist.trim(),
+      coverUrl: '', // No cover without Spotify API
+      spotifyUrl,
       cycleId,
       fid: userFid,
       username,
@@ -107,13 +103,13 @@ export function SubmissionForm({
     }
   };
 
-  if (step === 'success' && previewAlbum) {
+  if (step === 'success') {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center space-y-2">
             <p className="text-3xl">✓</p>
-            <P className="font-bold text-white">{previewAlbum.title} submitted!</P>
+            <P className="font-bold text-white">{title} submitted!</P>
             <P className="text-sm text-gray-400">Keep voting for other albums.</P>
           </div>
         </CardContent>
@@ -121,52 +117,41 @@ export function SubmissionForm({
     );
   }
 
-  if (step === 'loading') {
+  if (step === 'preview') {
     return (
       <Card>
         <CardContent className="p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-400">Fetching album from Spotify...</span>
-          </div>
-          <div className="flex gap-4 items-center">
-            <Skeleton className="w-20 h-20 rounded-lg" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-24" />
+          <H4>Album Details</H4>
+          <P className="text-sm text-gray-400">Enter the album info manually</P>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Album Title *</label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Dark Side of the Moon"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Artist *</label>
+              <Input
+                value={artist}
+                onChange={(e) => setArtist(e.target.value)}
+                placeholder="e.g., Pink Floyd"
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  if (step === 'preview' && previewAlbum) {
-    return (
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
-            <span className="font-medium text-white">Album Found</span>
-          </div>
-
-          <div className="flex gap-4 items-center">
-            {previewAlbum.coverUrl ? (
-              <img
-                src={previewAlbum.coverUrl}
-                alt={previewAlbum.title}
-                className="w-20 h-20 rounded-lg flex-shrink-0 object-cover"
-              />
-            ) : (
-              <div
-                className="w-20 h-20 rounded-lg flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #264653 0%, #2a9d8f 100%)' }}
-              />
-            )}
-            <div>
-              <P className="font-bold text-white">{previewAlbum.title}</P>
-              <P className="text-gray-400">{previewAlbum.artist}</P>
-              <P className="text-xs text-gray-600">{previewAlbum.tracks.length} tracks</P>
+          <div className="flex gap-4 items-center p-3 bg-gray-900 rounded-lg">
+            <div
+              className="w-16 h-16 rounded-lg flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            />
+            <div className="flex-1">
+              <P className="font-bold text-white">{title || 'Album Title'}</P>
+              <P className="text-gray-400">{artist || 'Artist'}</P>
             </div>
           </div>
 
@@ -177,7 +162,7 @@ export function SubmissionForm({
           {error && <P className="text-red-500 text-sm">{error}</P>}
 
           <div className="flex gap-2">
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button onClick={handleSubmit} disabled={isSubmitting || !title.trim() || !artist.trim()}>
               {isSubmitting ? 'Submitting...' : 'Submit Album'}
             </Button>
             <Button variant="outline" onClick={() => setStep('input')} disabled={isSubmitting}>
@@ -205,12 +190,12 @@ export function SubmissionForm({
           <div className="text-xs text-gray-500 space-y-1">
             <P className="font-medium">How to find:</P>
             <P>1. Open Spotify → Find album</P>
-            <P>2. Tap Share → Copy Link</P>
+            <P>2. Tap ••• → Share → Copy Link</P>
             <P>3. Paste above</P>
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handlePaste}>Next</Button>
+            <Button onClick={handleNext}>Next</Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
           </div>
         </div>

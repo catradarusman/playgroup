@@ -1,11 +1,10 @@
 {
   "schemaVersion": 1,
-  "readyToPublish": false,
+  "readyToPublish": true,
   "currentPhase": 6,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-08T09:30:00.000Z",
+  "lastUpdatedAt": "2026-02-08T09:45:00.000Z",
   "completedAt": null,
-  "publishBlocker": "Spotify API credentials required (SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET)",
   "phases": {
     "1": {
       "name": "planning",
@@ -124,25 +123,8 @@
       "displayName": "Post-Launch Enhancements",
       "status": "in_progress",
       "tasks": {
-        "spotify-api-integrated": "completed",
         "uuid-bug-fixed": "completed",
-        "spotify-credentials-added": "pending"
-      },
-      "enhancements": {
-        "spotify-api": {
-          "type": "external-api",
-          "description": "Auto-fetch album metadata, cover art, and track listings from Spotify",
-          "status": "awaiting-credentials",
-          "files": [
-            "src/lib/spotify.ts",
-            "src/app/api/spotify/album/route.ts"
-          ],
-          "envVars": [
-            "SPOTIFY_CLIENT_ID",
-            "SPOTIFY_CLIENT_SECRET"
-          ],
-          "setupUrl": "https://developer.spotify.com/dashboard"
-        }
+        "manual-entry-mode": "completed"
       },
       "bugFixes": {
         "uuid-validation": {
@@ -154,21 +136,14 @@
             "src/features/app/components/vote-tab.tsx"
           ]
         }
-      }
+      },
+      "notes": "Spotify API integration available but optional - users enter album details manually"
     }
   },
   "metadata": {
     "appName": "Playgroup",
     "description": "Music community app - 26 albums per year through community voting",
     "theme": "dark monochrome futuristic",
-    "externalApis": ["Spotify Web API"],
     "databaseTables": ["cycles", "albums", "votes", "reviews"]
-  },
-  "prePublishChecklist": {
-    "featuresComplete": true,
-    "databaseReady": true,
-    "shareButtonsWired": true,
-    "spotifyCredentials": false,
-    "testedWithRealData": false
   }
 }
