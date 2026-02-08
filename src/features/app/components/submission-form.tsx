@@ -128,8 +128,16 @@ export function SubmissionForm({
   };
 
   const handleSubmit = async () => {
-    if (!albumData || !cycleId || !userFid) {
-      setError('Missing required data');
+    if (!albumData) {
+      setError('Album data not found - try searching again');
+      return;
+    }
+    if (!cycleId) {
+      setError('No active voting cycle - check back when voting opens');
+      return;
+    }
+    if (!userFid) {
+      setError('Please sign in to submit albums');
       return;
     }
 

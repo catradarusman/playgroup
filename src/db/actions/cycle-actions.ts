@@ -156,3 +156,40 @@ export async function getListenerCount(_cycleId: string): Promise<number> {
   // Placeholder for MVP - could track via KV store
   return 47;
 }
+
+/**
+ * Get or create a current cycle - ensures there's always an active cycle
+ * Creates Week 1 in voting phase if no cycle exists
+ */
+export async function getOrCreateCurrentCycle() {
+  const existing = await getCurrentCycle();
+  if (existing) return existing;
+
+  // No cycle exists - create the first one!
+  const now = new Date();
+  const year = now.getFullYear();
+
+  // Calculate cycle dates: 2 weeks total
+  // Voting: Mon-Fri (5 days), Listening: Sat-Sun + next Mon-Fri + Sat-Sun (9 days)
+  const startDate = new Date(now);
+  startDate.setHours(0, 0, 0, 0);
+
+  const votingEndsAt = new Date(startDate);
+  votingEndsAt.setDate(votingEndsAt.getDate() + 5); // 5 days for voting
+  votingEndsAt.setHours(22, 0, 0, 0); // 10pm
+
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 14); // 2 weeks total
+  endDate.setHours(23, 59, 59, 999);
+
+  const newCycle = await createCycle({
+    weekNumber: 1,
+    year,
+    phase: 'voting',
+    startDate,
+    endDate,
+    votingEndsAt,
+  });
+
+  return newCycle;
+}

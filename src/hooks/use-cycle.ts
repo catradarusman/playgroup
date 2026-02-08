@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCycleWithCountdown, getCycleAlbum, getPastAlbums, getListenerCount } from '@/db/actions/cycle-actions';
+import { getCycleWithCountdown, getCycleAlbum, getPastAlbums, getListenerCount, getOrCreateCurrentCycle } from '@/db/actions/cycle-actions';
 
 export type CyclePhase = 'voting' | 'listening';
 
@@ -45,6 +45,9 @@ export function useCycle() {
 
   const refresh = useCallback(async () => {
     try {
+      // Ensure a cycle exists (creates one if needed)
+      await getOrCreateCurrentCycle();
+
       const data = await getCycleWithCountdown();
       if (data) {
         setCycle({
