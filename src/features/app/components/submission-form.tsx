@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, H4, P, Button, Input, Skeleton } from '@neynar/ui';
 import { useSubmitAlbum } from '@/hooks/use-submissions';
 
@@ -28,10 +28,9 @@ export function SubmissionForm({
   userFid,
   username,
 }: SubmissionFormProps) {
-  const [step, setStep] = useState<'input' | 'loading' | 'manual' | 'preview' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'search' | 'loading' | 'preview' | 'success'>('input');
   const [spotifyUrl, setSpotifyUrl] = useState('');
-  const [title, setTitle] = useState('');
-  const [artist, setArtist] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +49,7 @@ export function SubmissionForm({
     return null;
   };
 
-  const handleNext = async () => {
+  const handlePaste = () => {
     // Validate Spotify link
     if (!spotifyUrl.includes('spotify.com/album') && !spotifyUrl.includes('spotify:album:')) {
       setError('Please paste a valid Spotify album link');
@@ -64,12 +63,12 @@ export function SubmissionForm({
     }
 
     setError(null);
-    setStep('manual');
+    setStep('search');
   };
 
   const handleSearch = async () => {
-    if (!title.trim()) {
-      setError('Please enter the album title to search');
+    if (!searchQuery.trim()) {
+      setError('Please enter the album name');
       return;
     }
 
@@ -77,9 +76,7 @@ export function SubmissionForm({
     setStep('loading');
 
     try {
-      // Search Deezer for album metadata
-      const query = artist.trim() ? `${artist.trim()} ${title.trim()}` : title.trim();
-      const response = await fetch(`/api/deezer/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/deezer/search?q=${encodeURIComponent(searchQuery.trim())}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -89,34 +86,45 @@ export function SubmissionForm({
           coverUrl: data.coverUrl,
           tracks: data.tracks || [],
         });
-        setTitle(data.title);
-        setArtist(data.artist);
         setStep('preview');
       } else {
-        // Not found - let user enter manually
-        setError('Album not found. Please enter details manually.');
-        setStep('manual');
+        // Not found on Deezer - use manual entry
+        const parts = searchQuery.trim().split(' - ');
+        if (parts.length >= 2) {
+          setAlbumData({
+            title: parts.slice(1).join(' - '),
+            artist: parts[0],
+            coverUrl: '',
+            tracks: [],
+          });
+        } else {
+          setAlbumData({
+            title: searchQuery.trim(),
+            artist: 'Unknown Artist',
+            coverUrl: '',
+            tracks: [],
+          });
+        }
+        setStep('preview');
       }
     } catch (err) {
       console.error('Error searching:', err);
-      setError('Search failed. Please enter details manually.');
-      setStep('manual');
+      // Use manual entry on error
+      setAlbumData({
+        title: searchQuery.trim(),
+        artist: 'Unknown Artist',
+        coverUrl: '',
+        tracks: [],
+      });
+      setStep('preview');
     }
   };
 
-  const handleSkipSearch = () => {
-    // User wants to enter manually without searching
-    if (!title.trim() || !artist.trim()) {
-      setError('Please enter both album title and artist');
-      return;
+  // Auto-search when user presses Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      handleSearch();
     }
-    setAlbumData({
-      title: title.trim(),
-      artist: artist.trim(),
-      coverUrl: '',
-      tracks: [],
-    });
-    setStep('preview');
   };
 
   const handleSubmit = async () => {
@@ -175,7 +183,7 @@ export function SubmissionForm({
         <CardContent className="p-4 space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span className="text-gray-400">Searching for album...</span>
+            <span className="text-gray-400">Finding album...</span>
           </div>
           <div className="flex gap-4 items-center">
             <Skeleton className="w-20 h-20 rounded-lg" />
@@ -230,8 +238,8 @@ export function SubmissionForm({
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Album'}
             </Button>
-            <Button variant="outline" onClick={() => setStep('manual')} disabled={isSubmitting}>
-              Edit
+            <Button variant="outline" onClick={() => { setSearchQuery(''); setStep('search'); }} disabled={isSubmitting}>
+              Wrong album?
             </Button>
           </div>
         </CardContent>
@@ -239,47 +247,35 @@ export function SubmissionForm({
     );
   }
 
-  if (step === 'manual') {
+  if (step === 'search') {
     return (
       <Card>
         <CardContent className="p-4 space-y-4">
-          <H4>Album Details</H4>
-          <P className="text-sm text-gray-400">Enter album info to search or submit manually</P>
+          <H4>What album is this?</H4>
+          <P className="text-sm text-gray-400">Type the album name to find cover art & track list</P>
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Album Title *</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Dark Side of the Moon"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Artist *</label>
-              <Input
-                value={artist}
-                onChange={(e) => setArtist(e.target.value)}
-                placeholder="e.g., Pink Floyd"
-              />
-            </div>
-          </div>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., Pink Floyd Dark Side of the Moon"
+            autoFocus
+          />
 
           {error && <P className="text-red-500 text-sm">{error}</P>}
 
-          <div className="flex gap-2 flex-wrap">
-            <Button onClick={handleSearch} disabled={!title.trim()}>
-              🔍 Search & Auto-fill
+          <P className="text-xs text-gray-600">
+            Tip: Include artist name for better results
+          </P>
+
+          <div className="flex gap-2">
+            <Button onClick={handleSearch} disabled={!searchQuery.trim()}>
+              Find Album
             </Button>
-            <Button variant="outline" onClick={handleSkipSearch} disabled={!title.trim() || !artist.trim()}>
-              Skip → Submit Manual
+            <Button variant="outline" onClick={() => setStep('input')}>
+              ← Back
             </Button>
           </div>
-
-          <Button variant="outline" onClick={() => setStep('input')} className="w-full">
-            ← Back
-          </Button>
         </CardContent>
       </Card>
     );
@@ -294,6 +290,7 @@ export function SubmissionForm({
             value={spotifyUrl}
             onChange={(e) => setSpotifyUrl(e.target.value)}
             placeholder="Paste Spotify album link"
+            autoFocus
           />
 
           {error && <P className="text-red-500 text-sm">{error}</P>}
@@ -306,7 +303,7 @@ export function SubmissionForm({
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleNext}>Next</Button>
+            <Button onClick={handlePaste}>Next</Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
           </div>
         </div>
