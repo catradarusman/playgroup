@@ -31,9 +31,10 @@ export function VoteTab() {
   // Voting hook
   const { vote, isVoting } = useVote();
 
-  // Use real data if available, fall back to mock
-  const hasRealData = dbSubmissions.length > 0;
-  const submissions = hasRealData ? dbSubmissions : MOCK_SUBMISSIONS.map(s => ({
+  // Use real data - only fall back to mock if no cycle exists
+  // If we have a real cycle, show real submissions (even if empty)
+  const hasRealCycle = cycle?.id && cycle.id.length > 10; // Real UUIDs are longer
+  const submissions = hasRealCycle ? dbSubmissions : MOCK_SUBMISSIONS.map(s => ({
     ...s,
     id: String(s.id),
   }));
@@ -42,7 +43,7 @@ export function VoteTab() {
   const daysLeftInPhase = cycle?.countdown?.days ?? MOCK_CYCLE_STATE.daysLeftInPhase;
   const hoursLeft = cycle?.countdown?.hours ?? MOCK_CYCLE_STATE.hoursLeft;
   const minutesLeft = cycle?.countdown?.minutes ?? MOCK_CYCLE_STATE.minutesLeft;
-  const userSubmissionsThisCycle = hasRealData ? userSubmissionCount : MOCK_CYCLE_STATE.userSubmissionsThisCycle;
+  const userSubmissionsThisCycle = hasRealCycle ? userSubmissionCount : MOCK_CYCLE_STATE.userSubmissionsThisCycle;
   const maxSubmissionsPerCycle = 3;
 
   const canVote = phase === 'voting';
@@ -51,7 +52,7 @@ export function VoteTab() {
 
   const handleVote = async (id: string) => {
     // Only allow voting on real data (not mocks with non-UUID IDs)
-    if (!userFid || isVoting || !hasRealData) return;
+    if (!userFid || isVoting || !hasRealCycle) return;
     const success = await vote(id, userFid);
     if (success) {
       refreshSubmissions();

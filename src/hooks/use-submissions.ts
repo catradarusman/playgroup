@@ -29,14 +29,22 @@ export function useSubmissions(cycleId: string | null, userFid: number | null) {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!cycleId || !userFid) {
+    if (!cycleId) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const data = await getSubmissionsWithUserVotes(cycleId, userFid);
-      setSubmissions(data);
+      // If user is logged in, get vote status too
+      if (userFid) {
+        const data = await getSubmissionsWithUserVotes(cycleId, userFid);
+        setSubmissions(data);
+      } else {
+        // Not logged in - just get submissions without vote status
+        const { getSubmissions } = await import('@/db/actions/submission-actions');
+        const data = await getSubmissions(cycleId);
+        setSubmissions(data.map(s => ({ ...s, hasVoted: false })));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load submissions');
     } finally {
