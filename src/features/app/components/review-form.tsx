@@ -2,21 +2,65 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H4, P, Button, Textarea } from '@neynar/ui';
+import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
+import { useSubmitReview } from '@/hooks/use-reviews';
 
 interface ReviewFormProps {
+  albumId: string;
   albumTitle: string;
   tracks: string[];
   onClose: () => void;
 }
 
-export function ReviewForm({ albumTitle, tracks, onClose }: ReviewFormProps) {
+export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [favoriteTrack, setFavoriteTrack] = useState('');
   const [hasListened, setHasListened] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const { data: user } = useFarcasterUser();
+  const { submit, isSubmitting, error: submitError } = useSubmitReview();
 
   const minChars = 50;
   const charCount = text.length;
+
+  const handleSubmit = async () => {
+    // Validation
+    if (rating === 0) {
+      setLocalError('Please select a rating');
+      return;
+    }
+    if (charCount < minChars) {
+      setLocalError(`Review must be at least ${minChars} characters`);
+      return;
+    }
+    if (!user?.fid) {
+      setLocalError('Please sign in to submit a review');
+      return;
+    }
+
+    setLocalError(null);
+
+    const result = await submit({
+      albumId,
+      fid: user.fid,
+      username: user.username || 'anon',
+      pfp: user.pfp_url || null,
+      rating,
+      text,
+      favoriteTrack: favoriteTrack || null,
+      hasListened,
+    });
+
+    if (result.success) {
+      onClose();
+    } else {
+      setLocalError(submitError || 'Failed to submit review');
+    }
+  };
+
+  const error = localError || submitError;
 
   return (
     <Card>
@@ -86,9 +130,18 @@ export function ReviewForm({ albumTitle, tracks, onClose }: ReviewFormProps) {
             </select>
           </div>
 
+          {error && <P className="text-red-500 text-sm">{error}</P>}
+
           <div className="flex gap-2">
-            <Button onClick={onClose}>Submit Review</Button>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || rating === 0 || charCount < minChars}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+              Cancel
+            </Button>
           </div>
         </div>
       </CardContent>

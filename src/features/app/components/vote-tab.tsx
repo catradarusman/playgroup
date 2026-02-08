@@ -2,31 +2,74 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H3, P, Button } from '@neynar/ui';
+import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
+import { useCycle } from '@/hooks/use-cycle';
+import { useSubmissions, useUserSubmissionCount, useVote } from '@/hooks/use-submissions';
 import { MOCK_CYCLE_STATE, MOCK_SUBMISSIONS } from '@/data/mocks';
-import type { Submission } from '@/features/app/types';
 import { SubmissionForm } from './submission-form';
 
 export function VoteTab() {
-  const [submissions, setSubmissions] = useState<Submission[]>(MOCK_SUBMISSIONS);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
-  const { phase, daysLeftInPhase, hoursLeft, minutesLeft, userSubmissionsThisCycle, maxSubmissionsPerCycle } =
-    MOCK_CYCLE_STATE;
+
+  // Get user from Farcaster context
+  const { data: user } = useFarcasterUser();
+  const userFid = user?.fid ?? null;
+  const username = user?.username ?? 'anon';
+
+  // Get cycle state
+  const { cycle, isLoading: cycleLoading } = useCycle();
+
+  // Get submissions with vote status
+  const { submissions: dbSubmissions, isLoading: submissionsLoading, refresh: refreshSubmissions } = useSubmissions(
+    cycle?.id ?? null,
+    userFid
+  );
+
+  // Get user's submission count
+  const { count: userSubmissionCount } = useUserSubmissionCount(userFid, cycle?.id ?? null);
+
+  // Voting hook
+  const { vote, isVoting } = useVote();
+
+  // Use real data if available, fall back to mock
+  const hasRealData = dbSubmissions.length > 0 || (!submissionsLoading && cycle);
+  const submissions = hasRealData ? dbSubmissions : MOCK_SUBMISSIONS.map(s => ({
+    ...s,
+    id: String(s.id),
+  }));
+
+  const phase = cycle?.phase ?? MOCK_CYCLE_STATE.phase;
+  const daysLeftInPhase = cycle?.countdown?.days ?? MOCK_CYCLE_STATE.daysLeftInPhase;
+  const hoursLeft = cycle?.countdown?.hours ?? MOCK_CYCLE_STATE.hoursLeft;
+  const minutesLeft = cycle?.countdown?.minutes ?? MOCK_CYCLE_STATE.minutesLeft;
+  const userSubmissionsThisCycle = hasRealData ? userSubmissionCount : MOCK_CYCLE_STATE.userSubmissionsThisCycle;
+  const maxSubmissionsPerCycle = 3;
 
   const canVote = phase === 'voting';
-  const canSubmit = canVote && userSubmissionsThisCycle < maxSubmissionsPerCycle;
+  const canSubmit = canVote && userSubmissionsThisCycle < maxSubmissionsPerCycle && userFid !== null;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
-  const handleVote = (id: number) => {
-    setSubmissions(submissions.map((s) => (s.id === id ? { ...s, votes: s.votes + 1, hasVoted: true } : s)));
+  const handleVote = async (id: string) => {
+    if (!userFid || isVoting) return;
+    const success = await vote(id, userFid);
+    if (success) {
+      refreshSubmissions();
+    }
   };
 
   if (showSubmitForm) {
     return (
       <div className="space-y-4">
         <SubmissionForm
-          onClose={() => setShowSubmitForm(false)}
+          onClose={() => {
+            setShowSubmitForm(false);
+            refreshSubmissions();
+          }}
           submissionsUsed={userSubmissionsThisCycle}
           maxSubmissions={maxSubmissionsPerCycle}
+          cycleId={cycle?.id ?? null}
+          userFid={userFid}
+          username={username}
         />
       </div>
     );
@@ -89,7 +132,15 @@ export function VoteTab() {
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
                     <div className="text-lg font-bold text-gray-600 w-6">#{index + 1}</div>
-                    <div className="w-12 h-12 rounded bg-gradient-to-br from-indigo-400 to-purple-500 flex-shrink-0" />
+                    {'coverUrl' in album && album.coverUrl ? (
+                      <img
+                        src={album.coverUrl}
+                        alt={album.title}
+                        className="w-12 h-12 rounded flex-shrink-0 object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-gradient-to-br from-indigo-400 to-purple-500 flex-shrink-0" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <P className="font-medium text-sm text-white truncate">{album.title}</P>
                       <P className="text-xs text-gray-400">{album.artist}</P>
@@ -98,12 +149,12 @@ export function VoteTab() {
                       </P>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      {canVote ? (
+                      {canVote && userFid ? (
                         <Button
                           variant={album.hasVoted ? 'secondary' : 'default'}
                           size="sm"
-                          onClick={() => !album.hasVoted && handleVote(album.id)}
-                          disabled={album.hasVoted}
+                          onClick={() => !album.hasVoted && handleVote(String(album.id))}
+                          disabled={album.hasVoted || isVoting}
                         >
                           {album.hasVoted ? '✓' : '▲'}
                         </Button>

@@ -2,33 +2,76 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H3, P, Button } from '@neynar/ui';
-import { MOCK_CYCLE_STATE, MOCK_PAST_ALBUMS, MOCK_REVIEWS, MOCK_ALBUM_TRACKS } from '@/data/mocks';
-import type { PastAlbum } from '@/features/app/types';
+import { ShareButton } from '@/neynar-farcaster-sdk/mini';
+import { usePastAlbums, type AlbumData } from '@/hooks/use-cycle';
+import { useReviews } from '@/hooks/use-reviews';
+import { MOCK_PAST_ALBUMS, MOCK_REVIEWS, MOCK_ALBUM_TRACKS } from '@/data/mocks';
 import { AlbumDetailView } from './album-detail-view';
 
 export function ArchiveTab() {
-  const [selectedAlbum, setSelectedAlbum] = useState<PastAlbum | null>(null);
-  const albumsThisYear = MOCK_PAST_ALBUMS.length;
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+
+  // Get past albums from database
+  const { albums: dbAlbums, isLoading } = usePastAlbums(new Date().getFullYear());
+
+  // Get reviews for selected album
+  const { reviews: dbReviews } = useReviews(selectedAlbumId);
+
+  // Use real data if available, fall back to mock
+  const hasRealData = dbAlbums.length > 0 || !isLoading;
+  const albums = hasRealData ? dbAlbums : MOCK_PAST_ALBUMS.map(a => ({
+    id: String(a.id),
+    title: a.title,
+    artist: a.artist,
+    coverUrl: '',
+    spotifyUrl: '',
+    avgRating: a.avgRating,
+    totalReviews: a.reviews,
+    mostLovedTrack: null,
+    mostLovedTrackVotes: null,
+    weekNumber: a.weekNumber,
+    submittedByUsername: '',
+    tracks: null,
+  }));
+
+  const albumsThisYear = albums.length;
   const albumsRemaining = 26 - albumsThisYear;
-  const totalReviews = MOCK_PAST_ALBUMS.reduce((sum, a) => sum + a.reviews, 0);
-  const avgRating = (MOCK_PAST_ALBUMS.reduce((sum, a) => sum + a.avgRating, 0) / albumsThisYear).toFixed(1);
+  const totalReviews = albums.reduce((sum, a) => sum + (a.totalReviews ?? 0), 0);
+  const avgRating = albumsThisYear > 0
+    ? (albums.reduce((sum, a) => sum + (a.avgRating ?? 0), 0) / albumsThisYear).toFixed(1)
+    : '0';
+
+  // Find selected album
+  const selectedAlbum = selectedAlbumId
+    ? albums.find(a => a.id === selectedAlbumId) ?? null
+    : null;
+
+  // Reviews for selected album
+  const reviews = dbReviews.length > 0 ? dbReviews : MOCK_REVIEWS.map(r => ({
+    ...r,
+    id: String(r.id),
+  }));
 
   if (selectedAlbum) {
     return (
       <AlbumDetailView
         album={{
-          ...MOCK_CYCLE_STATE.currentAlbum,
           id: selectedAlbum.id,
           title: selectedAlbum.title,
           artist: selectedAlbum.artist,
-          weekNumber: selectedAlbum.weekNumber,
+          coverUrl: selectedAlbum.coverUrl,
+          spotifyUrl: selectedAlbum.spotifyUrl,
           avgRating: selectedAlbum.avgRating,
-          totalReviews: selectedAlbum.reviews,
+          totalReviews: selectedAlbum.totalReviews,
+          mostLovedTrack: selectedAlbum.mostLovedTrack,
+          mostLovedTrackVotes: selectedAlbum.mostLovedTrackVotes,
+          weekNumber: selectedAlbum.weekNumber,
+          submittedBy: selectedAlbum.submittedByUsername,
         }}
-        reviews={MOCK_REVIEWS}
-        tracks={MOCK_ALBUM_TRACKS}
-        onBack={() => setSelectedAlbum(null)}
-        canReview={false}
+        reviews={reviews}
+        tracks={selectedAlbum.tracks ?? MOCK_ALBUM_TRACKS}
+        onBack={() => setSelectedAlbumId(null)}
+        canReview={true}
       />
     );
   }
@@ -47,7 +90,7 @@ export function ArchiveTab() {
       {/* Visual Progress */}
       <Card>
         <CardContent className="p-4">
-          <P className="text-center text-sm font-medium text-white mb-3">2025 Journey</P>
+          <P className="text-center text-sm font-medium text-white mb-3">{new Date().getFullYear()} Journey</P>
           <div className="flex flex-wrap gap-1.5 justify-center">
             {Array.from({ length: 26 }).map((_, i) => (
               <div
@@ -55,8 +98,8 @@ export function ArchiveTab() {
                 className={`w-5 h-5 rounded-sm cursor-pointer transition-transform hover:scale-110 ${
                   i < albumsThisYear ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gray-800'
                 }`}
-                onClick={() => i < albumsThisYear && setSelectedAlbum(MOCK_PAST_ALBUMS[i])}
-                title={i < albumsThisYear ? MOCK_PAST_ALBUMS[i]?.title : `Week ${i + 1}`}
+                onClick={() => i < albumsThisYear && setSelectedAlbumId(albums[i]?.id ?? null)}
+                title={i < albumsThisYear ? albums[i]?.title : `Week ${i + 1}`}
               />
             ))}
           </div>
@@ -96,30 +139,61 @@ export function ArchiveTab() {
 
       {/* Past Albums List */}
       <div className="space-y-2">
-        {MOCK_PAST_ALBUMS.map((album) => (
-          <Card key={album.id}>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedAlbum(album)}>
-                <div className="text-xs font-bold text-gray-600 w-8">W{album.weekNumber}</div>
-                <div className="w-14 h-14 rounded bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <P className="font-medium text-white">{album.title}</P>
-                  <P className="text-sm text-gray-400">{album.artist}</P>
-                </div>
-                <div className="text-right">
-                  <P className="font-bold text-lg text-white">{album.avgRating}</P>
-                  <P className="text-xs text-gray-500">{album.reviews} reviews</P>
-                </div>
+        {albums.length === 0 && !isLoading ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center py-4">
+                <P className="text-3xl mb-2">🎵</P>
+                <P className="text-gray-400">No albums yet</P>
+                <P className="text-sm text-gray-500">Your listening journey begins soon!</P>
               </div>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          albums.map((album) => (
+            <Card key={album.id}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedAlbumId(album.id)}>
+                  <div className="text-xs font-bold text-gray-600 w-8">W{album.weekNumber}</div>
+                  {album.coverUrl ? (
+                    <img
+                      src={album.coverUrl}
+                      alt={album.title}
+                      className="w-14 h-14 rounded flex-shrink-0 object-cover"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <P className="font-medium text-white">{album.title}</P>
+                    <P className="text-sm text-gray-400">{album.artist}</P>
+                  </div>
+                  <div className="text-right">
+                    <P className="font-bold text-lg text-white">{album.avgRating ?? '-'}</P>
+                    <P className="text-xs text-gray-500">{album.totalReviews ?? 0} reviews</P>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Share */}
-      <Button variant="secondary" className="w-full">
+      <ShareButton
+        variant="secondary"
+        className="w-full"
+        text={`Our Playgroup ${new Date().getFullYear()} journey: ${albumsThisYear}/26 albums discovered, ${totalReviews} reviews written, ${avgRating}/5 avg rating! Join us in exploring great music together.`}
+        queryParams={{
+          shareType: 'journey',
+          year: new Date().getFullYear().toString(),
+          albumsCompleted: albumsThisYear.toString(),
+          totalReviews: totalReviews.toString(),
+          avgRating: avgRating,
+        }}
+      >
         Share Our Journey
-      </Button>
+      </ShareButton>
     </div>
   );
 }
