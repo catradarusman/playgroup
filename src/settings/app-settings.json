@@ -9,5 +9,6 @@
   "splashBackgroundColor": "#000000",
   "tagline": "Music Matters. Albums Tell Stories.",
   "requiredChains": [],
-  "shareButtonTitle": "Join the Listening"
+  "shareButtonTitle": "Join the Listening",
+  "canonicalDomain": "playgroup.neynar.app"
 }
