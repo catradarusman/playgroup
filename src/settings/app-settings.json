@@ -1,13 +1,13 @@
 {
-  "name": "26 Albums",
-  "shortName": "26 Albums",
+  "name": "Playgroup",
+  "shortName": "Playgroup",
   "subtitle": "Slow listening community",
-  "description": "A music community that votes on 1 album every 2 weeks. Resist algorithmic consumption. Respect music through slow, collective listening. 26 albums a year. Zero algorithms.",
+  "description": "Discover music together. Vote on one album every two weeks. A community that resists algorithms and celebrates collective listening.",
   "shortDescription": "Vote on albums. Listen together. Review as a community.",
   "primaryCategory": "social",
   "tags": ["music", "community", "albums", "reviews", "voting"],
   "splashBackgroundColor": "#000000",
-  "tagline": "26 albums. Zero algorithms.",
+  "tagline": "Music Beyond Algorithms",
   "requiredChains": [],
   "shareButtonTitle": "Listen With Us"
 }
