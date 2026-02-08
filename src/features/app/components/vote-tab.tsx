@@ -32,7 +32,7 @@ export function VoteTab() {
   const { vote, isVoting } = useVote();
 
   // Use real data if available, fall back to mock
-  const hasRealData = dbSubmissions.length > 0 || (!submissionsLoading && cycle);
+  const hasRealData = dbSubmissions.length > 0;
   const submissions = hasRealData ? dbSubmissions : MOCK_SUBMISSIONS.map(s => ({
     ...s,
     id: String(s.id),
@@ -50,7 +50,8 @@ export function VoteTab() {
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
-    if (!userFid || isVoting) return;
+    // Only allow voting on real data (not mocks with non-UUID IDs)
+    if (!userFid || isVoting || !hasRealData) return;
     const success = await vote(id, userFid);
     if (success) {
       refreshSubmissions();

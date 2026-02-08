@@ -14,11 +14,12 @@ export function ArchiveTab() {
   // Get past albums from database
   const { albums: dbAlbums, isLoading } = usePastAlbums(new Date().getFullYear());
 
-  // Get reviews for selected album
-  const { reviews: dbReviews } = useReviews(selectedAlbumId);
-
   // Use real data if available, fall back to mock
-  const hasRealData = dbAlbums.length > 0 || !isLoading;
+  const hasRealData = dbAlbums.length > 0;
+
+  // Only query reviews if we have real data (mock IDs aren't valid UUIDs)
+  const shouldQueryReviews = hasRealData && selectedAlbumId;
+  const { reviews: dbReviews } = useReviews(shouldQueryReviews ? selectedAlbumId : null);
   const albums = hasRealData ? dbAlbums : MOCK_PAST_ALBUMS.map(a => ({
     id: String(a.id),
     title: a.title,

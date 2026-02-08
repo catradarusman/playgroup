@@ -54,13 +54,16 @@ export function AlbumDetailView({
   const { data: user } = useFarcasterUser();
   const userFid = propUserFid ?? user?.fid ?? null;
 
-  // Check if user already reviewed
-  const { hasReviewed } = useUserReview(album.id ?? null, userFid);
+  // Check if album.id is a valid UUID (not a mock ID like "4")
+  const isValidUuid = album.id && album.id.length > 10;
+
+  // Check if user already reviewed (only query DB if we have a valid UUID)
+  const { hasReviewed } = useUserReview(isValidUuid ? album.id : null, userFid);
 
   // Can write review if: in listening phase AND hasn't reviewed yet
   const showWriteReviewButton = canReview && !hasReviewed;
 
-  if (showReviewForm && album.id) {
+  if (showReviewForm && isValidUuid && album.id) {
     return (
       <div className="space-y-4">
         <Button variant="outline" onClick={() => setShowReviewForm(false)}>
