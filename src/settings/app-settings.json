@@ -1,13 +1,13 @@
 {
   "name": "Playgroup",
   "shortName": "Playgroup",
-  "subtitle": "Slow listening community",
-  "description": "Discover music together. Vote on one album every two weeks. A community that resists algorithms and celebrates collective listening.",
-  "shortDescription": "Vote on albums. Listen together. Review as a community.",
+  "subtitle": "Reclaim the Album. Restore Music.",
+  "description": "We're a rebellion against surface-level streaming. Playgroup is a community dedicated to restoring music's soul—where albums are journeys, not commodities. We curate deeply, listen completely, and honor the artistry behind every record. No algorithms, no shortcuts. Just pure, intentional listening.",
+  "shortDescription": "Revive music. One full album at a time.",
   "primaryCategory": "social",
-  "tags": ["music", "community", "albums", "reviews", "voting"],
+  "tags": ["artistry", "albums", "deep-listening", "music-community", "curation"],
   "splashBackgroundColor": "#000000",
-  "tagline": "Music Beyond Algorithms",
+  "tagline": "Music Matters. Albums Tell Stories.",
   "requiredChains": [],
-  "shareButtonTitle": "Listen With Us"
+  "shareButtonTitle": "Join the Listening"
 }
