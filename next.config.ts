@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.scdn.co", // Spotify album covers
       },
+      {
+        protocol: "https",
+        hostname: "cdns-images.dzcdn.net", // Deezer album covers
+      },
+      {
+        protocol: "https",
+        hostname: "e-cdns-images.dzcdn.net", // Deezer album covers (alternate)
+      },
     ],
   },
   devIndicators: false,

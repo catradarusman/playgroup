@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H4, P, Button, Input } from '@neynar/ui';
+import { Card, CardContent, H4, P, Button, Input, Skeleton } from '@neynar/ui';
 import { useSubmitAlbum } from '@/hooks/use-submissions';
 
 interface SubmissionFormProps {
@@ -13,6 +13,13 @@ interface SubmissionFormProps {
   username: string;
 }
 
+interface AlbumData {
+  title: string;
+  artist: string;
+  coverUrl: string;
+  tracks: string[];
+}
+
 export function SubmissionForm({
   onClose,
   submissionsUsed,
@@ -21,10 +28,11 @@ export function SubmissionForm({
   userFid,
   username,
 }: SubmissionFormProps) {
-  const [step, setStep] = useState<'input' | 'preview' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'loading' | 'manual' | 'preview' | 'success'>('input');
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
+  const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { submit, isSubmitting, error: submitError } = useSubmitAlbum();
@@ -42,7 +50,7 @@ export function SubmissionForm({
     return null;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // Validate Spotify link
     if (!spotifyUrl.includes('spotify.com/album') && !spotifyUrl.includes('spotify:album:')) {
       setError('Please paste a valid Spotify album link');
@@ -56,20 +64,63 @@ export function SubmissionForm({
     }
 
     setError(null);
+    setStep('manual');
+  };
+
+  const handleSearch = async () => {
+    if (!title.trim()) {
+      setError('Please enter the album title to search');
+      return;
+    }
+
+    setError(null);
+    setStep('loading');
+
+    try {
+      // Search Deezer for album metadata
+      const query = artist.trim() ? `${artist.trim()} ${title.trim()}` : title.trim();
+      const response = await fetch(`/api/deezer/search?q=${encodeURIComponent(query)}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setAlbumData({
+          title: data.title,
+          artist: data.artist,
+          coverUrl: data.coverUrl,
+          tracks: data.tracks || [],
+        });
+        setTitle(data.title);
+        setArtist(data.artist);
+        setStep('preview');
+      } else {
+        // Not found - let user enter manually
+        setError('Album not found. Please enter details manually.');
+        setStep('manual');
+      }
+    } catch (err) {
+      console.error('Error searching:', err);
+      setError('Search failed. Please enter details manually.');
+      setStep('manual');
+    }
+  };
+
+  const handleSkipSearch = () => {
+    // User wants to enter manually without searching
+    if (!title.trim() || !artist.trim()) {
+      setError('Please enter both album title and artist');
+      return;
+    }
+    setAlbumData({
+      title: title.trim(),
+      artist: artist.trim(),
+      coverUrl: '',
+      tracks: [],
+    });
     setStep('preview');
   };
 
   const handleSubmit = async () => {
-    // Validate fields
-    if (!title.trim()) {
-      setError('Please enter the album title');
-      return;
-    }
-    if (!artist.trim()) {
-      setError('Please enter the artist name');
-      return;
-    }
-    if (!cycleId || !userFid) {
+    if (!albumData || !cycleId || !userFid) {
       setError('Missing required data');
       return;
     }
@@ -84,10 +135,11 @@ export function SubmissionForm({
 
     const result = await submit({
       spotifyId,
-      title: title.trim(),
-      artist: artist.trim(),
-      coverUrl: '', // No cover without Spotify API
+      title: albumData.title,
+      artist: albumData.artist,
+      coverUrl: albumData.coverUrl,
       spotifyUrl,
+      tracks: albumData.tracks,
       cycleId,
       fid: userFid,
       username,
@@ -103,13 +155,13 @@ export function SubmissionForm({
     }
   };
 
-  if (step === 'success') {
+  if (step === 'success' && albumData) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center space-y-2">
             <p className="text-3xl">✓</p>
-            <P className="font-bold text-white">{title} submitted!</P>
+            <P className="font-bold text-white">{albumData.title} submitted!</P>
             <P className="text-sm text-gray-400">Keep voting for other albums.</P>
           </div>
         </CardContent>
@@ -117,12 +169,82 @@ export function SubmissionForm({
     );
   }
 
-  if (step === 'preview') {
+  if (step === 'loading') {
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="text-gray-400">Searching for album...</span>
+          </div>
+          <div className="flex gap-4 items-center">
+            <Skeleton className="w-20 h-20 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (step === 'preview' && albumData) {
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-green-500">✓</span>
+            <span className="font-medium text-white">Album Ready</span>
+          </div>
+
+          <div className="flex gap-4 items-center">
+            {albumData.coverUrl ? (
+              <img
+                src={albumData.coverUrl}
+                alt={albumData.title}
+                className="w-20 h-20 rounded-lg flex-shrink-0 object-cover shadow-lg"
+              />
+            ) : (
+              <div
+                className="w-20 h-20 rounded-lg flex-shrink-0 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+              />
+            )}
+            <div>
+              <P className="font-bold text-white">{albumData.title}</P>
+              <P className="text-gray-400">{albumData.artist}</P>
+              {albumData.tracks.length > 0 && (
+                <P className="text-xs text-gray-600">{albumData.tracks.length} tracks</P>
+              )}
+            </div>
+          </div>
+
+          <P className="text-xs text-gray-500">
+            Submission {submissionsUsed + 1}/{maxSubmissions} this cycle
+          </P>
+
+          {error && <P className="text-red-500 text-sm">{error}</P>}
+
+          <div className="flex gap-2">
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Album'}
+            </Button>
+            <Button variant="outline" onClick={() => setStep('manual')} disabled={isSubmitting}>
+              Edit
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (step === 'manual') {
     return (
       <Card>
         <CardContent className="p-4 space-y-4">
           <H4>Album Details</H4>
-          <P className="text-sm text-gray-400">Enter the album info manually</P>
+          <P className="text-sm text-gray-400">Enter album info to search or submit manually</P>
 
           <div className="space-y-3">
             <div>
@@ -144,31 +266,20 @@ export function SubmissionForm({
             </div>
           </div>
 
-          <div className="flex gap-4 items-center p-3 bg-gray-900 rounded-lg">
-            <div
-              className="w-16 h-16 rounded-lg flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-            />
-            <div className="flex-1">
-              <P className="font-bold text-white">{title || 'Album Title'}</P>
-              <P className="text-gray-400">{artist || 'Artist'}</P>
-            </div>
-          </div>
-
-          <P className="text-xs text-gray-500">
-            You've submitted {submissionsUsed + 1}/{maxSubmissions} albums this cycle
-          </P>
-
           {error && <P className="text-red-500 text-sm">{error}</P>}
 
-          <div className="flex gap-2">
-            <Button onClick={handleSubmit} disabled={isSubmitting || !title.trim() || !artist.trim()}>
-              {isSubmitting ? 'Submitting...' : 'Submit Album'}
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={handleSearch} disabled={!title.trim()}>
+              🔍 Search & Auto-fill
             </Button>
-            <Button variant="outline" onClick={() => setStep('input')} disabled={isSubmitting}>
-              Back
+            <Button variant="outline" onClick={handleSkipSearch} disabled={!title.trim() || !artist.trim()}>
+              Skip → Submit Manual
             </Button>
           </div>
+
+          <Button variant="outline" onClick={() => setStep('input')} className="w-full">
+            ← Back
+          </Button>
         </CardContent>
       </Card>
     );
