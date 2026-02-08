@@ -33,7 +33,7 @@ export function SketchHeading({
 
   return (
     <Tag
-      className={`sketch-text font-bold ${sizes[level]} ${effectClass} ${className}`}
+      className={`sketch-heading font-bold ${sizes[level]} ${effectClass} ${className}`}
     >
       {children}
     </Tag>

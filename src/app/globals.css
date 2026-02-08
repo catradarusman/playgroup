@@ -5,43 +5,281 @@
   --font-mono: var(--font-geist-mono);
   --font-sketch: var(--font-caveat), var(--font-patrick-hand), cursive;
 
-  /* Monochrome color palette */
+  /* Monochrome color palette - Dark Futuristic Theme */
   --black: #000000;
   --white: #FFFFFF;
+  --grey-950: #0A0A0A;
   --grey-900: #121212;
-  --grey-800: #1E1E1E;
-  --grey-700: #2C2C2C;
-  --grey-600: #3A3A3A;
+  --grey-800: #1A1A1A;
+  --grey-700: #262626;
+  --grey-600: #333333;
   --grey-500: #4A4A4A;
-  --grey-400: #6B6B6B;
-  --grey-300: #8C8C8C;
-  --grey-200: #CCCCCC;
-  --grey-100: #E0E0E0;
+  --grey-400: #666666;
+  --grey-300: #888888;
+  --grey-200: #AAAAAA;
+  --grey-100: #E5E5E5;
 
   /* Theme variables */
-  --primary: var(--white);
-  --accent: var(--grey-300);
   --background: var(--black);
   --foreground: var(--grey-100);
-  --card-background: var(--grey-800);
-  --border-color: var(--grey-700);
+  --card: var(--grey-900);
+  --card-foreground: var(--grey-100);
+  --primary: var(--white);
+  --primary-foreground: var(--black);
+  --secondary: var(--grey-800);
+  --secondary-foreground: var(--grey-200);
+  --muted: var(--grey-800);
+  --muted-foreground: var(--grey-400);
+  --accent: var(--grey-700);
+  --accent-foreground: var(--grey-100);
+  --border: var(--grey-700);
+  --input: var(--grey-800);
+  --ring: var(--grey-500);
 
   /* Sketch effect variables */
   --sketch-roughness: 2px;
-  --sketch-shadow: 3px 3px 0px rgba(255, 255, 255, 0.1);
-  --sketch-border: 2px solid var(--grey-600);
+  --sketch-shadow: 3px 3px 0px rgba(255, 255, 255, 0.05);
+  --sketch-border: 2px solid var(--grey-700);
+  --sketch-bg: var(--grey-900);
+  --sketch-text: var(--grey-100);
 }
 
-.dark {
-  --primary: var(--white);
-  --accent: var(--grey-300);
-  --background: var(--black);
-  --foreground: var(--grey-100);
-  --card-background: var(--grey-800);
-  --border-color: var(--grey-700);
+/* Base styles */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-/* Rest of the existing CSS remains the same as in the original file */
-@import "@neynar/ui/styles";
+/* Sketch Card - Dark Monochrome */
+.sketch-card {
+  background-color: var(--grey-900);
+  border: 1px solid var(--grey-700);
+  border-radius: 12px;
+  position: relative;
+}
 
-/* ... (previous sketch-related CSS remains unchanged) ... */
+/* Sketch Button - Dark Monochrome */
+.sketch-button {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.sketch-button-primary {
+  background-color: var(--white);
+  color: var(--black);
+  border: none;
+}
+
+.sketch-button-primary:hover {
+  background-color: var(--grey-200);
+}
+
+.sketch-button-secondary {
+  background-color: var(--grey-800);
+  color: var(--grey-100);
+  border: 1px solid var(--grey-600);
+}
+
+.sketch-button-secondary:hover {
+  background-color: var(--grey-700);
+}
+
+.sketch-button-outline {
+  background-color: transparent;
+  color: var(--grey-100);
+  border: 1px solid var(--grey-600);
+}
+
+.sketch-button-outline:hover {
+  background-color: var(--grey-800);
+}
+
+/* Sketch Input - Dark Monochrome */
+.sketch-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: var(--font-sans);
+  background-color: var(--grey-900);
+  border: 1px solid var(--grey-700);
+  border-radius: 8px;
+  color: var(--grey-100);
+  transition: border-color 0.15s ease;
+}
+
+.sketch-input:focus {
+  outline: none;
+  border-color: var(--grey-500);
+}
+
+.sketch-input::placeholder {
+  color: var(--grey-500);
+}
+
+/* Sketch Textarea - Dark Monochrome */
+.sketch-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: var(--font-sans);
+  background-color: var(--grey-900);
+  border: 1px solid var(--grey-700);
+  border-radius: 8px;
+  color: var(--grey-100);
+  min-height: 100px;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+.sketch-textarea:focus {
+  outline: none;
+  border-color: var(--grey-500);
+}
+
+.sketch-textarea::placeholder {
+  color: var(--grey-500);
+}
+
+/* Sketch Heading - Dark Monochrome */
+.sketch-heading {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.02em;
+}
+
+.sketch-heading-1 {
+  font-size: 2rem;
+}
+
+.sketch-heading-2 {
+  font-size: 1.5rem;
+}
+
+.sketch-heading-3 {
+  font-size: 1.25rem;
+}
+
+.sketch-heading-4 {
+  font-size: 1rem;
+}
+
+/* Sketch Text - Dark Monochrome */
+.sketch-text {
+  font-family: var(--font-sans);
+  color: var(--grey-300);
+}
+
+/* Sketch Layout - Dark Monochrome */
+.sketch-mini-layout {
+  min-height: 100dvh;
+  background-color: var(--black);
+  color: var(--grey-100);
+}
+
+.sketch-mini-layout-header {
+  background-color: var(--grey-950);
+  border-bottom: 1px solid var(--grey-800);
+  padding: 16px;
+}
+
+.sketch-mini-layout-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--white);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.sketch-mini-layout-content {
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+.sketch-mini-layout-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--grey-950);
+  border-top: 1px solid var(--grey-800);
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.sketch-mini-layout-tab {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--grey-500);
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  min-height: 44px;
+}
+
+.sketch-mini-layout-tab:hover {
+  color: var(--grey-300);
+}
+
+.sketch-mini-layout-tab-active {
+  color: var(--white);
+}
+
+/* Sketch Paper & Border - Dark Monochrome */
+.sketch-paper {
+  background-color: var(--black) !important;
+}
+
+.sketch-border {
+  border: 1px solid var(--grey-700) !important;
+  border-radius: 4px;
+}
+
+.sketch-border-b {
+  border-bottom: 1px solid var(--grey-700) !important;
+}
+
+.sketch-border-t {
+  border-top: 1px solid var(--grey-700) !important;
+}
+
+/* Additional dark theme styling */
+select {
+  background-color: var(--grey-900);
+  border: 1px solid var(--grey-700);
+  border-radius: 8px;
+  color: var(--grey-100);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--grey-500);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+  accent-color: var(--white);
+}
+
+/* Link/anchor styling */
+a {
+  color: var(--grey-200);
+}
+
+a:hover {
+  color: var(--white);
+}

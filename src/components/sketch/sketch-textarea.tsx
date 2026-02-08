@@ -15,7 +15,7 @@ export function SketchTextarea({
         <label className="sketch-text text-lg font-bold">{label}</label>
       )}
       <textarea
-        className={`sketch-input text-base min-h-[100px] ${className}`}
+        className={`sketch-textarea text-base ${className}`}
         {...props}
       />
     </div>

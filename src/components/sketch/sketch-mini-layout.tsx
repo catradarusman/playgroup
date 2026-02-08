@@ -111,9 +111,9 @@ export function SketchMiniLayout({
                     onClick={() => setActiveTab(tabValue)}
                     className={`
                       flex-1 px-3 py-2 sketch-text text-sm font-medium
-                      border-r-2 border-foreground/30 last:border-r-0
+                      border-r border-gray-700 last:border-r-0
                       transition-colors
-                      ${isActive ? "bg-foreground/10" : "hover:bg-foreground/5"}
+                      ${isActive ? "bg-gray-800 text-white" : "hover:bg-gray-800/50 text-gray-400"}
                     `}
                   >
                     {tab.label}
@@ -179,7 +179,7 @@ export function SketchMiniLayout({
           style={{ filter: "url(#sketchy)" }}
         >
           {/* Fixed Header */}
-          <header className="sticky top-1 z-10 px-3 py-2 sketch-border-b bg-[#fafafa]/95 backdrop-blur-sm">
+          <header className="sticky top-1 z-10 px-3 py-2 sketch-border-b bg-black/95 backdrop-blur-sm">
             <SketchHeading level={4}>{title}</SketchHeading>
           </header>
 
@@ -188,7 +188,7 @@ export function SketchMiniLayout({
 
           {/* Optional Fixed Footer */}
           {footer && (
-            <footer className="sticky bottom-1 p-3 sketch-border-t bg-[#fafafa]/95 backdrop-blur-sm">
+            <footer className="sticky bottom-1 p-3 sketch-border-t bg-black/95 backdrop-blur-sm">
               {footer}
             </footer>
           )}
