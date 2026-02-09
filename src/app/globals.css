@@ -1,11 +1,12 @@
 @import "@neynar/ui/styles";
 
+/* Monochrome Futuristic Palette - Base colors */
 :root {
   --font-sans: var(--font-outfit), system-ui, sans-serif;
   --font-mono: var(--font-mono), monospace;
   --font-sketch: var(--font-outfit), system-ui, sans-serif;
 
-  /* Monochrome Futuristic Palette */
+  /* Color palette */
   --black: #000000;
   --white: #FFFFFF;
   --grey-950: #0A0A0A;
@@ -24,23 +25,6 @@
   --red-accent-dim: #991B1B;
   --red-accent-bright: #EF4444;
 
-  /* Theme variables */
-  --background: var(--black);
-  --foreground: var(--grey-100);
-  --card: var(--grey-900);
-  --card-foreground: var(--grey-100);
-  --primary: var(--white);
-  --primary-foreground: var(--black);
-  --secondary: var(--grey-800);
-  --secondary-foreground: var(--grey-200);
-  --muted: var(--grey-800);
-  --muted-foreground: var(--grey-400);
-  --accent: var(--red-accent);
-  --accent-foreground: var(--white);
-  --border: var(--grey-700);
-  --input: var(--grey-800);
-  --ring: var(--grey-500);
-
   /* Sketch effect variables */
   --sketch-roughness: 2px;
   --sketch-shadow: 3px 3px 0px rgba(255, 255, 255, 0.05);
@@ -49,10 +33,37 @@
   --sketch-text: var(--grey-100);
 }
 
-/* Base styles */
+/* Dark theme - ALWAYS applied (monochrome dark futuristic) */
+:root,
+.dark,
+html {
+  --background: #000000;
+  --foreground: #E5E5E5;
+  --card: #121212;
+  --card-foreground: #E5E5E5;
+  --popover: #121212;
+  --popover-foreground: #E5E5E5;
+  --primary: #FFFFFF;
+  --primary-foreground: #000000;
+  --secondary: #1A1A1A;
+  --secondary-foreground: #AAAAAA;
+  --muted: #1A1A1A;
+  --muted-foreground: #666666;
+  --accent: #DC2626;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #262626;
+  --input: #1A1A1A;
+  --ring: #4A4A4A;
+  --radius: 0.5rem;
+}
+
+/* Base styles - Force dark background */
+html,
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: #000000 !important;
+  color: #E5E5E5;
 }
 
 /* Force Outfit font on EVERYTHING */
