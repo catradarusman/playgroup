@@ -81,7 +81,7 @@ export function VoteTab() {
             <H3>Vote for Next Album</H3>
             {canVote ? (
               <>
-                <P className="text-lg font-bold text-orange-500">
+                <P className="text-lg font-bold text-red-500">
                   {daysLeftInPhase}d {hoursLeft}h {minutesLeft}m
                 </P>
                 <P className="text-xs text-gray-500">
@@ -134,7 +134,7 @@ export function VoteTab() {
                         className="w-12 h-12 rounded flex-shrink-0 object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded bg-gradient-to-br from-indigo-400 to-purple-500 flex-shrink-0" />
+                      <div className="w-12 h-12 rounded bg-gray-800 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       <P className="font-medium text-sm text-white truncate">{album.title}</P>

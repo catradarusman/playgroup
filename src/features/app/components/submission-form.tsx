@@ -219,8 +219,7 @@ export function SubmissionForm({
               />
             ) : (
               <div
-                className="w-20 h-20 rounded-lg flex-shrink-0 shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                className="w-20 h-20 rounded-lg flex-shrink-0 shadow-lg bg-gray-800 border border-gray-700"
               />
             )}
             <div>

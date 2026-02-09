@@ -72,8 +72,7 @@ export function NowPlayingTab() {
                 {phase === 'voting' ? 'Voting in Progress' : 'Waiting for Winner'}
               </P>
               <div
-                className="w-44 h-44 rounded-lg shadow-xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                className="w-44 h-44 rounded-lg shadow-xl flex items-center justify-center bg-gray-800 border border-gray-700"
               >
                 <P className="text-6xl">🎵</P>
               </div>
@@ -119,8 +118,7 @@ export function NowPlayingTab() {
               />
             ) : (
               <div
-                className="w-44 h-44 rounded-lg shadow-xl cursor-pointer hover:scale-105 transition-transform"
-                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                className="w-44 h-44 rounded-lg shadow-xl cursor-pointer hover:scale-105 transition-transform bg-gray-800 border border-gray-700"
                 onClick={() => setView('detail')}
               />
             )}

@@ -11,11 +11,15 @@ export function CycleStatusBanner({ phase, countdown }: CycleStatusBannerProps) 
   const statusConfig = {
     voting: {
       label: '🗳️ Voting Open',
-      color: 'from-amber-500 to-orange-500',
+      bgColor: 'bg-gray-900',
+      accentColor: 'text-red-500',
+      borderColor: 'border-red-500/30',
     },
     listening: {
       label: '🎧 Listening Week',
-      color: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-gray-900',
+      accentColor: 'text-white',
+      borderColor: 'border-gray-700',
     },
   };
 
@@ -23,9 +27,9 @@ export function CycleStatusBanner({ phase, countdown }: CycleStatusBannerProps) 
   const countdownText = `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m`;
 
   return (
-    <div className={`bg-gradient-to-r ${config.color} rounded-lg p-3 text-white text-center`}>
-      <p className="font-bold">{config.label}</p>
-      <p className="text-sm opacity-90">
+    <div className={`${config.bgColor} border ${config.borderColor} rounded-lg p-3 text-center`}>
+      <p className={`font-bold ${config.accentColor}`}>{config.label}</p>
+      <p className="text-sm text-gray-400">
         {phase === 'voting' ? `Closes in ${countdownText}` : `${countdownText} left to listen`}
       </p>
     </div>

@@ -5,7 +5,7 @@
   --font-mono: var(--font-mono), monospace;
   --font-sketch: var(--font-outfit), system-ui, sans-serif;
 
-  /* Monochrome color palette - Dark Futuristic Theme */
+  /* Monochrome Futuristic Palette */
   --black: #000000;
   --white: #FFFFFF;
   --grey-950: #0A0A0A;
@@ -19,6 +19,11 @@
   --grey-200: #AAAAAA;
   --grey-100: #E5E5E5;
 
+  /* Red accent - tertiary/supporting color */
+  --red-accent: #DC2626;
+  --red-accent-dim: #991B1B;
+  --red-accent-bright: #EF4444;
+
   /* Theme variables */
   --background: var(--black);
   --foreground: var(--grey-100);
@@ -30,8 +35,8 @@
   --secondary-foreground: var(--grey-200);
   --muted: var(--grey-800);
   --muted-foreground: var(--grey-400);
-  --accent: var(--grey-700);
-  --accent-foreground: var(--grey-100);
+  --accent: var(--red-accent);
+  --accent-foreground: var(--white);
   --border: var(--grey-700);
   --input: var(--grey-800);
   --ring: var(--grey-500);

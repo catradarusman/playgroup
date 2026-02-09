@@ -83,7 +83,7 @@ export function ArchiveTab() {
               <div
                 key={i}
                 className={`w-5 h-5 rounded-sm cursor-pointer transition-transform hover:scale-110 ${
-                  i < albumsThisYear ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gray-800'
+                  i < albumsThisYear ? 'bg-white' : 'bg-gray-800'
                 }`}
                 onClick={() => i < albumsThisYear && setSelectedAlbumId(albums[i]?.id ?? null)}
                 title={i < albumsThisYear ? albums[i]?.title : `Week ${i + 1}`}
@@ -149,7 +149,7 @@ export function ArchiveTab() {
                       className="w-14 h-14 rounded flex-shrink-0 object-cover"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded bg-gradient-to-br from-gray-700 to-gray-600 flex-shrink-0" />
+                    <div className="w-14 h-14 rounded bg-gray-800 flex-shrink-0" />
                   )}
                   <div className="flex-1">
                     <P className="font-medium text-white">{album.title}</P>
