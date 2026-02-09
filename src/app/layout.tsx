@@ -1,13 +1,13 @@
 import "@/app/globals.css";
 import { ThemeClient } from "@/components/theme-client";
 import { ProvidersAndInitialization } from "@/features/app/providers-and-initialization";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 import { ReactNode } from "react";
 
-const inter = Inter({
-  variable: "--font-inter",
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeClient />
       </head>
       <body
-        className={`${inter.className} ${jetbrainsMono.variable} antialiased`}
+        className={`${outfit.className} ${jetbrainsMono.variable} antialiased`}
       >
         <ProvidersAndInitialization>{children}</ProvidersAndInitialization>
       </body>
