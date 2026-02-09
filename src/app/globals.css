@@ -50,14 +50,18 @@ body {
   color: var(--foreground);
 }
 
-/* Inherit font from body (Outfit applied via className) */
-*, *::before, *::after {
-  font-family: inherit !important;
+/* Force Outfit font on EVERYTHING */
+html, body, *, *::before, *::after,
+button, input, select, textarea,
+h1, h2, h3, h4, h5, h6, p, span, div, a,
+[class*="text"], [class*="button"], [class*="card"],
+[class*="heading"], [class*="title"], [class*="label"] {
+  font-family: "Outfit", system-ui, sans-serif !important;
 }
 
 /* Mono font for code/numbers */
 code, pre, .mono {
-  font-family: var(--font-mono), monospace !important;
+  font-family: "JetBrains Mono", monospace !important;
 }
 
 /* Sketch Card - Dark Monochrome */
