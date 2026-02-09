@@ -1,9 +1,9 @@
 @import "@neynar/ui/styles";
 
 :root {
-  --font-sans: var(--font-space-grotesk), system-ui, sans-serif;
-  --font-mono: var(--font-space-mono), monospace;
-  --font-sketch: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-mono), monospace;
+  --font-sketch: var(--font-inter), system-ui, sans-serif;
 
   /* Monochrome color palette - Dark Futuristic Theme */
   --black: #000000;
@@ -48,12 +48,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-space-grotesk), system-ui, sans-serif !important;
+  font-family: var(--font-inter), system-ui, sans-serif !important;
 }
 
-/* Force Space Grotesk on all elements */
+/* Force Inter on all elements */
 *, *::before, *::after {
-  font-family: var(--font-space-grotesk), system-ui, sans-serif !important;
+  font-family: var(--font-inter), system-ui, sans-serif !important;
+}
+
+/* Mono font for code/numbers */
+code, pre, .mono {
+  font-family: var(--font-mono), monospace !important;
 }
 
 /* Exclude icons */

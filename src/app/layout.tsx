@@ -1,19 +1,19 @@
 import "@/app/globals.css";
 import { ThemeClient } from "@/components/theme-client";
 import { ProvidersAndInitialization } from "@/features/app/providers-and-initialization";
-import { Space_Grotesk, Space_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { ReactNode } from "react";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "700"],
 });
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeClient />
       </head>
       <body
-        className={`${spaceGrotesk.variable} ${spaceMono.variable} antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ProvidersAndInitialization>{children}</ProvidersAndInitialization>
       </body>
