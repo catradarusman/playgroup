@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
+import { Card, CardContent, H3, P, Skeleton } from '@neynar/ui';
 import { ShareButton } from '@/neynar-farcaster-sdk/mini';
 import { usePastAlbums } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';

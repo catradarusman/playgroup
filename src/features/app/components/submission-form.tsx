@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, H4, P, Button, Input, Skeleton } from '@neynar/ui';
 import { useSubmitAlbum } from '@/hooks/use-submissions';
 
