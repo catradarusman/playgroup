@@ -1,13 +1,13 @@
 {
   "name": "Playgroup",
   "shortName": "Playgroup",
-  "subtitle": "Reclaim the Album. Restore Music.",
-  "description": "We're a rebellion against surface-level streaming. Playgroup is a community dedicated to restoring music's soul—where albums are journeys, not commodities. We curate deeply, listen completely, and honor the artistry behind every record. No algorithms, no shortcuts. Just pure, intentional listening.",
+  "subtitle": "Reclaim the Album",
+  "description": "A community dedicated to restoring music's soul. We curate deeply, listen completely, and honor the artistry behind every record. No algorithms, no shortcuts.",
   "shortDescription": "Revive music. One full album at a time.",
   "primaryCategory": "social",
   "tags": ["artistry", "albums", "deep-listening", "music-community", "curation"],
   "splashBackgroundColor": "#000000",
-  "tagline": "Music Matters. Albums Tell Stories.",
+  "tagline": "Albums Tell Stories",
   "requiredChains": [],
   "shareButtonTitle": "Join the Listening",
   "canonicalDomain": "playgroup.neynar.app"
