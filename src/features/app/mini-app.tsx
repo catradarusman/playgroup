@@ -23,7 +23,7 @@ export function MiniApp() {
             Vote
           </TabsTrigger>
           <TabsTrigger value="archive" className="flex-1">
-            The 26
+            Archive
           </TabsTrigger>
         </TabsList>
 
