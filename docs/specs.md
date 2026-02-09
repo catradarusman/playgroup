@@ -211,3 +211,8 @@
 | 2025-02-08 | Phase 6 | Track listings now stored with albums for review picker |
 | 2025-02-08 | Phase 6 | Fixed UUID validation bug (mock IDs vs real database UUIDs) |
 | 2025-02-08 | Phase 6 | Awaiting Spotify credentials before publishing |
+| 2025-02-08 | Phase 6 | **Theme Refinement**: Removed all gradient backgrounds |
+| 2025-02-08 | Phase 6 | **Theme Refinement**: Added red accent color (#DC2626) as tertiary |
+| 2025-02-08 | Phase 6 | **Theme Refinement**: Converted all colored elements to monochrome |
+| 2025-02-08 | Phase 6 | **Theme Refinement**: Replaced all emoji icons with monochrome text/symbols |
+| 2025-02-08 | Phase 6 | Fixed app-settings.json validation errors (shortened subtitle, description, tagline) |
