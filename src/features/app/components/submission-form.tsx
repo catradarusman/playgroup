@@ -6,8 +6,6 @@ import { useSubmitAlbum } from '@/hooks/use-submissions';
 
 interface SubmissionFormProps {
   onClose: () => void;
-  submissionsUsed: number;
-  maxSubmissions: number;
   cycleId: string | null;
   userFid: number | null;
   username: string;
@@ -22,8 +20,6 @@ interface AlbumData {
 
 export function SubmissionForm({
   onClose,
-  submissionsUsed,
-  maxSubmissions,
   cycleId,
   userFid,
   username,
@@ -235,10 +231,6 @@ export function SubmissionForm({
               )}
             </div>
           </div>
-
-          <P className="text-xs text-gray-500">
-            Submission {submissionsUsed + 1}/{maxSubmissions} this cycle
-          </P>
 
           {error && <P className="text-red-500 text-sm">{error}</P>}
 

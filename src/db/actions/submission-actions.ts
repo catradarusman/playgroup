@@ -6,6 +6,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 
 /**
  * Submit a new album for voting
+ * No submission limit - users can submit unlimited albums during voting phase
  */
 export async function submitAlbum(data: {
   spotifyId: string;
@@ -18,16 +19,6 @@ export async function submitAlbum(data: {
   fid: number;
   username: string;
 }) {
-  // Check submission count for this cycle
-  const userSubmissions = await db
-    .select()
-    .from(albums)
-    .where(and(eq(albums.cycleId, data.cycleId), eq(albums.submittedByFid, data.fid)));
-
-  if (userSubmissions.length >= 3) {
-    return { success: false, error: 'Limit reached - focus on voting!' };
-  }
-
   // Check for duplicate spotify ID in this cycle
   const existingAlbum = await db
     .select()

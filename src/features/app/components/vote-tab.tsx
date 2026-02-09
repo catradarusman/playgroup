@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
 import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
 import { useCycle } from '@/hooks/use-cycle';
-import { useSubmissions, useUserSubmissionCount, useVote } from '@/hooks/use-submissions';
+import { useSubmissions, useVote } from '@/hooks/use-submissions';
 import { SubmissionForm } from './submission-form';
 
 export function VoteTab() {
@@ -24,9 +24,6 @@ export function VoteTab() {
     userFid
   );
 
-  // Get user's submission count
-  const { count: userSubmissionCount } = useUserSubmissionCount(userFid, cycle?.id ?? null);
-
   // Voting hook
   const { vote, isVoting } = useVote();
 
@@ -34,11 +31,9 @@ export function VoteTab() {
   const daysLeftInPhase = cycle?.countdown?.days ?? 0;
   const hoursLeft = cycle?.countdown?.hours ?? 0;
   const minutesLeft = cycle?.countdown?.minutes ?? 0;
-  const userSubmissionsThisCycle = userSubmissionCount;
-  const maxSubmissionsPerCycle = 3;
 
   const canVote = phase === 'voting';
-  const canSubmit = canVote && userSubmissionsThisCycle < maxSubmissionsPerCycle && userFid !== null;
+  const canSubmit = canVote && userFid !== null;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
@@ -69,8 +64,6 @@ export function VoteTab() {
             setShowSubmitForm(false);
             refreshSubmissions();
           }}
-          submissionsUsed={userSubmissionsThisCycle}
-          maxSubmissions={maxSubmissionsPerCycle}
           cycleId={cycle?.id ?? null}
           userFid={userFid}
           username={username}
@@ -105,14 +98,12 @@ export function VoteTab() {
       {/* Submit Button */}
       {canSubmit && (
         <Button className="w-full" onClick={() => setShowSubmitForm(true)}>
-          + Submit an Album ({userSubmissionsThisCycle}/{maxSubmissionsPerCycle} used)
+          + Submit an Album
         </Button>
       )}
-      {canVote && !canSubmit && (
+      {canVote && !userFid && (
         <div className="text-center py-2">
-          <P className="text-sm text-gray-500">
-            You've submitted {maxSubmissionsPerCycle}/{maxSubmissionsPerCycle} albums this cycle
-          </P>
+          <P className="text-sm text-gray-500">Sign in to submit albums</P>
         </div>
       )}
 
