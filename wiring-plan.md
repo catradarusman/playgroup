@@ -91,7 +91,7 @@ createdAt        TIMESTAMP DEFAULT NOW()
 - `updateCyclePhase(cycleId, phase, winnerId)` - Update phase
 
 ### Submission Actions (`src/db/actions/submission-actions.ts`)
-- `submitAlbum(data)` - Submit album with metadata
+- `submitAlbum(data)` - Submit album with metadata + auto-vote for submitter
 - `getSubmissions(cycleId)` - Get all submissions with votes
 - `getSubmissionsWithUserVotes(cycleId, fid)` - Include user's vote status
 - `getUserSubmissionCount(fid, cycleId)` - Check 3-per-cycle limit
@@ -181,6 +181,7 @@ No authentication required - Deezer API is public.
 - ✅ One vote per album per user
 - ✅ No un-voting
 - ✅ Only albums in 'voting' status
+- ✅ Auto-vote on submission (submitter starts with 1 vote)
 
 ### Reviews
 - ✅ One review per album per user
@@ -197,3 +198,5 @@ No authentication required - Deezer API is public.
 3. **No Mock Data**: All components use real database, show empty states when no data
 4. **Loading States**: All tabs show skeleton loaders while fetching
 5. **FID-Based Auth**: All user actions use Farcaster FID from `useFarcasterUser()`
+6. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
+7. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers

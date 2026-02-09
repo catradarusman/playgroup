@@ -25,6 +25,7 @@
 | **Vibe**            | Clean, minimal, dark, futuristic                   |
 | **Colors**          | Monochrome - black, white, grey                    |
 | **Style Direction** | Dark mode, high contrast, sleek futuristic feel    |
+| **Typography**      | Outfit (geometric sans-serif) + JetBrains Mono     |
 
 ---
 
@@ -46,7 +47,7 @@
 
 ### Album Submission
 - ✅ Paste Spotify link → Search Deezer for metadata → Preview → Submit
-- ✅ Max 3 submissions per cycle per user
+- ✅ Auto-vote: submitter's album starts with 1 vote automatically
 - ✅ No duplicates in same cycle
 - ✅ No past winners allowed
 
@@ -54,6 +55,7 @@
 - ✅ Upvote albums, one vote per album per user
 - ✅ Unlimited total votes allowed
 - ✅ No un-voting (keeps it simple)
+- ✅ Submitter auto-votes for their own album on submission
 
 ### Winner Selection
 - ✅ Auto-select highest votes
@@ -118,3 +120,5 @@
 | 2025-02-08 | Replaced Spotify API with Deezer (no auth needed)    |
 | 2025-02-08 | Removed all mock data - production ready             |
 | 2025-02-08 | Auto-create first cycle on app load                  |
+| 2025-02-08 | Added auto-vote on album submission                  |
+| 2025-02-08 | Updated typography to Outfit + JetBrains Mono        |
