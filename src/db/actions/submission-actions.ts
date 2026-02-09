@@ -58,7 +58,15 @@ export async function submitAlbum(data: {
     })
     .returning();
 
-  return { success: true, album: result[0] };
+  const album = result[0];
+
+  // Auto-vote for the submitter's own album
+  await db.insert(votes).values({
+    albumId: album.id,
+    voterFid: data.fid,
+  });
+
+  return { success: true, album };
 }
 
 /**
