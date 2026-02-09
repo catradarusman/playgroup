@@ -59,11 +59,19 @@ html {
   --radius: 0.5rem;
 }
 
-/* Base styles - Force dark background */
+/* Base styles - Force dark background on everything */
 html,
-body {
+body,
+#__next,
+main,
+.h-dvh {
   background-color: #000000 !important;
-  color: #E5E5E5;
+  color: #E5E5E5 !important;
+}
+
+/* Override any light mode styles */
+* {
+  color-scheme: dark !important;
 }
 
 /* Force Outfit font on EVERYTHING */
