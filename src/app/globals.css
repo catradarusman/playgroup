@@ -48,11 +48,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-space-grotesk), system-ui, sans-serif !important;
 }
 
-* {
-  font-family: inherit;
+/* Force Space Grotesk on all elements */
+*, *::before, *::after {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif !important;
+}
+
+/* Exclude icons */
+[class*="icon"], [class*="Icon"], svg {
+  font-family: inherit !important;
 }
 
 /* Sketch Card - Dark Monochrome */
