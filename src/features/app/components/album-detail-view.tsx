@@ -156,7 +156,7 @@ export function AlbumDetailView({
               </Button>
             )}
             {hasReviewed && (
-              <P className="text-xs text-green-500">✓ You reviewed this</P>
+              <P className="text-xs text-white">✓ You reviewed this</P>
             )}
           </div>
 

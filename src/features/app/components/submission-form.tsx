@@ -206,7 +206,7 @@ export function SubmissionForm({
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
+            <span className="text-white">✓</span>
             <span className="font-medium text-white">Album Ready</span>
           </div>
 

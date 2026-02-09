@@ -108,7 +108,7 @@ export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormP
               placeholder="What did you think of this album? (minimum 50 characters)"
               className="bg-gray-900 border-gray-700 text-white"
             />
-            <P className={`text-xs mt-1 ${charCount < minChars ? 'text-orange-500' : 'text-green-500'}`}>
+            <P className={`text-xs mt-1 ${charCount < minChars ? 'text-red-500' : 'text-white'}`}>
               {charCount}/{minChars} characters
             </P>
           </div>
