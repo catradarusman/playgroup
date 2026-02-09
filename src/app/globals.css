@@ -48,22 +48,16 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-outfit), system-ui, sans-serif !important;
 }
 
-/* Force Outfit on all elements */
+/* Inherit font from body (Outfit applied via className) */
 *, *::before, *::after {
-  font-family: var(--font-outfit), system-ui, sans-serif !important;
+  font-family: inherit !important;
 }
 
 /* Mono font for code/numbers */
 code, pre, .mono {
   font-family: var(--font-mono), monospace !important;
-}
-
-/* Exclude icons */
-[class*="icon"], [class*="Icon"], svg {
-  font-family: inherit !important;
 }
 
 /* Sketch Card - Dark Monochrome */

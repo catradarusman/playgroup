@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeClient />
       </head>
       <body
-        className={`${outfit.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${outfit.className} ${jetbrainsMono.variable} antialiased`}
       >
         <ProvidersAndInitialization>{children}</ProvidersAndInitialization>
       </body>
