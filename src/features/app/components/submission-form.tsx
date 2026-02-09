@@ -172,7 +172,7 @@ export function SubmissionForm({
       <Card>
         <CardContent className="p-6">
           <div className="text-center space-y-2">
-            <p className="text-3xl">✓</p>
+            <p className="text-3xl font-bold text-white">OK</p>
             <P className="font-bold text-white">{albumData.title} submitted!</P>
             <P className="text-sm text-gray-400">Keep voting for other albums.</P>
           </div>

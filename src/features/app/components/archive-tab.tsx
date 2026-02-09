@@ -130,7 +130,7 @@ export function ArchiveTab() {
           <Card>
             <CardContent className="p-6">
               <div className="text-center py-4">
-                <P className="text-3xl mb-2">🎵</P>
+                <P className="text-3xl mb-2 font-mono">♪</P>
                 <P className="text-gray-400">No albums yet</P>
                 <P className="text-sm text-gray-500">Your listening journey begins soon!</P>
               </div>

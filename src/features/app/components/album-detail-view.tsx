@@ -112,7 +112,7 @@ export function AlbumDetailView({
                   window.open(album.spotifyUrl, '_blank');
                 }}
               >
-                ▶ Listen on Spotify
+                PLAY ON SPOTIFY
               </Button>
             </div>
           </div>
@@ -131,7 +131,7 @@ export function AlbumDetailView({
             <div>
               {album.mostLovedTrack ? (
                 <>
-                  <P className="text-lg font-medium text-white">🎵 {album.mostLovedTrack}</P>
+                  <P className="text-lg font-medium text-white">♪ {album.mostLovedTrack}</P>
                   <P className="text-xs text-gray-500">Most loved • {album.mostLovedTrackVotes ?? 0} picks</P>
                 </>
               ) : (
@@ -183,7 +183,7 @@ export function AlbumDetailView({
                   </div>
                   <P className="text-sm text-gray-300">{review.text}</P>
                   {review.favoriteTrack && (
-                    <P className="text-xs mt-2 text-gray-500">★ Favorite: {review.favoriteTrack}</P>
+                    <P className="text-xs mt-2 text-gray-500">// Favorite: {review.favoriteTrack}</P>
                   )}
                 </div>
               ))}

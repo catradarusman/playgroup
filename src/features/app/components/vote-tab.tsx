@@ -112,7 +112,7 @@ export function VoteTab() {
         <Card>
           <CardContent className="p-6">
             <div className="text-center py-4">
-              <P className="text-3xl mb-2">🎵</P>
+              <P className="text-3xl mb-2 font-light text-gray-600">♪</P>
               <P className="text-gray-400">No submissions yet</P>
               <P className="text-sm text-gray-500">Be the first to submit an album!</P>
             </div>
@@ -151,11 +151,11 @@ export function VoteTab() {
                           onClick={() => !album.hasVoted && handleVote(String(album.id))}
                           disabled={album.hasVoted || isVoting}
                         >
-                          {album.hasVoted ? '✓' : '▲'}
+                          {album.hasVoted ? 'VOTED' : '+'}
                         </Button>
                       ) : (
                         <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-500">
-                          ▲
+                          +
                         </div>
                       )}
                       <span className="text-sm font-medium text-white">{album.votes}</span>
@@ -169,7 +169,7 @@ export function VoteTab() {
 
       {!canVote && (
         <div className="text-center py-2">
-          <P className="text-sm text-gray-500">🗳️ Voting opens Monday</P>
+          <P className="text-sm text-gray-500">Voting opens Monday</P>
         </div>
       )}
     </div>

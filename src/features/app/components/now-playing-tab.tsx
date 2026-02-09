@@ -74,7 +74,7 @@ export function NowPlayingTab() {
               <div
                 className="w-44 h-44 rounded-lg shadow-xl flex items-center justify-center bg-gray-800 border border-gray-700"
               >
-                <P className="text-6xl">🎵</P>
+                <P className="text-5xl font-light text-gray-600">♪</P>
               </div>
               <div>
                 <H2>No Album Yet</H2>
@@ -146,7 +146,7 @@ export function NowPlayingTab() {
                   window.open(currentAlbum.spotifyUrl, '_blank');
                 }}
               >
-                ▶ Open in Spotify
+                PLAY ON SPOTIFY
               </Button>
               <Button variant="outline" onClick={() => setView('detail')}>
                 See Reviews
@@ -160,7 +160,7 @@ export function NowPlayingTab() {
       <ShareButton
         variant="secondary"
         className="w-full"
-        text={`🎵 Now listening to "${currentAlbum.title}" by ${currentAlbum.artist} on Playgroup! Week ${currentAlbum.weekNumber} of our 26-album journey.`}
+        text={`Now listening to "${currentAlbum.title}" by ${currentAlbum.artist} on Playgroup. Week ${currentAlbum.weekNumber} of our 26-album journey.`}
         queryParams={{
           shareType: 'album',
           albumTitle: currentAlbum.title,

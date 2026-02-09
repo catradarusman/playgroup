@@ -10,13 +10,13 @@ interface CycleStatusBannerProps {
 export function CycleStatusBanner({ phase, countdown }: CycleStatusBannerProps) {
   const statusConfig = {
     voting: {
-      label: '🗳️ Voting Open',
+      label: 'VOTING OPEN',
       bgColor: 'bg-gray-900',
       accentColor: 'text-red-500',
       borderColor: 'border-red-500/30',
     },
     listening: {
-      label: '🎧 Listening Week',
+      label: 'LISTENING WEEK',
       bgColor: 'bg-gray-900',
       accentColor: 'text-white',
       borderColor: 'border-gray-700',
