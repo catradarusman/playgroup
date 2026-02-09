@@ -69,7 +69,7 @@ export function ArchiveTab() {
         <CardContent className="p-4">
           <div className="text-center">
             <H3>Selected Album</H3>
-            <P className="text-sm text-gray-400 mt-1">Voted by our community</P>
+            <P className="text-sm text-gray-400 mt-1">Voted and listened together with the community</P>
           </div>
         </CardContent>
       </Card>
