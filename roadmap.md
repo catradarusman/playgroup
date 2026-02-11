@@ -274,9 +274,255 @@ PRIVY_APP_SECRET=your_secret
 #3 Point Economy (uses new unified user system)
 ```
 
-**Recommended**: Implement in order 1 → 2 → 4 → 3
+**Recommended**: Implement in order 1 → 2 → 4 → 5 (skip #3, replaced by #5)
 
-Why #4 before #3? The Point Economy will use `userId` instead of `fid`. Better to migrate the identity system first, then build points on top of it.
+Why this order?
+- #4 (Privy) establishes unified user system with wallet addresses
+- #5 ($PLAY on-chain) replaces #3 entirely - points are on-chain, not database
+
+---
+
+### 5. $PLAY Token On-Chain (AUX-Style)
+
+**Complexity**: High | **Est. Time**: 5-7 hrs | **Dependencies**: #2 (Profile), #4 (Privy/Wallets)
+
+**Summary**: On-chain point economy using $PLAY ERC-20 token, modeled after AUX's ATTN system. Submissions and votes happen on-chain; metadata and reviews stay off-chain.
+
+**Vision**: Transparent, auditable participation with real token rewards.
+
+**Token Details**:
+- **Token**: $PLAY (ERC-20, provided by user)
+- **Supply**: 1 billion
+- **Network**: Base
+- **Contract**: User will provide address
+
+### What Goes On-Chain vs Off-Chain
+
+| Data | Storage | Reason |
+|------|---------|--------|
+| Album submissions (Spotify URLs) | **On-chain** | Transparent, auditable |
+| Votes | **On-chain** | Transparent, auditable |
+| $PLAY balances (earned) | **On-chain** | Real token |
+| Bonus balances | **On-chain** | Non-transferable, spend-only |
+| Album metadata (title, art) | Off-chain (DB) | Too expensive on-chain |
+| Reviews | Off-chain (DB) | Text too expensive |
+| User profiles | Off-chain (DB) | Complex data |
+
+### Point Structure (On-Chain)
+
+| Action | Points | Type | On-Chain? |
+|--------|--------|------|-----------|
+| New member signup | +100 $PLAY | **Bonus** (non-transferable) | Yes |
+| Submit album | -5 $PLAY | Spend (bonus first) | Yes |
+| Upvote album | -1 $PLAY | Spend (bonus first) | Yes |
+| Receive upvote | +1 $PLAY | **Earned** (transferable) | Yes |
+| Album wins | +5 $PLAY | **Earned** (transferable) | Yes (backend trigger) |
+| Submit review | +3 $PLAY | **Earned** (transferable) | Yes (backend trigger) |
+
+### Smart Contract Design
+
+```solidity
+contract PlaygroupCore {
+    // External $PLAY token (provided, 1B supply)
+    IERC20 public playToken;
+
+    // Constants (like AUX)
+    uint256 public constant SUBMIT_COST = 5 ether;    // 5 $PLAY (18 decimals)
+    uint256 public constant VOTE_COST = 1 ether;      // 1 $PLAY
+    uint256 public constant SIGNUP_BONUS = 100 ether; // 100 $PLAY
+    uint256 public constant VOTE_REWARD = 1 ether;    // +1 per upvote
+    uint256 public constant WIN_REWARD = 5 ether;     // +5 when album wins
+    uint256 public constant REVIEW_REWARD = 3 ether;  // +3 for review
+
+    // On-chain state
+    struct Album {
+        string spotifyUrl;      // Only URL stored on-chain
+        address submitter;
+        uint256 votes;
+        uint256 cycleId;
+        bool isWinner;
+    }
+
+    Album[] public albums;
+    mapping(uint256 => mapping(address => bool)) public hasVoted;
+    mapping(address => uint256) public bonusBalance;  // Non-transferable
+    mapping(address => bool) public hasClaimedBonus;
+
+    // User actions (on-chain, user pays gas)
+    function submitAlbum(string calldata spotifyUrl, uint256 cycleId) external;
+    function vote(uint256 albumId) external;
+    function claimSignupBonus() external;
+
+    // Backend-triggered rewards (server wallet pays gas)
+    function rewardReview(address user) external onlyOwner;
+    function declareWinner(uint256 albumId) external onlyOwner;
+}
+```
+
+### Bonus vs Earned Balances
+
+| Balance Type | Storage | Transferable? | Use |
+|--------------|---------|---------------|-----|
+| **Bonus** | Contract mapping | No | Spend on submit/vote |
+| **Earned** | $PLAY ERC-20 | Yes | Spend, transfer, hold |
+
+**Spending logic**: Bonus deducted first, then $PLAY tokens.
+
+### User Flow Changes
+
+**Current (Database - instant)**:
+```
+User clicks "Submit" → DB write → Done
+```
+
+**New (On-Chain - 2-5 sec)**:
+```
+User clicks "Submit"
+    → Wallet popup (sign transaction)
+    → Wait for confirmation (2-5 sec)
+    → Contract emits event
+    → Backend syncs metadata to DB
+    → Done
+```
+
+### Gas Costs (Base Network)
+
+| Action | Gas | Cost (approx) | Who Pays |
+|--------|-----|---------------|----------|
+| `submitAlbum()` | ~100k | ~$0.02 | User |
+| `vote()` | ~80k | ~$0.015 | User |
+| `claimSignupBonus()` | ~50k | ~$0.01 | User |
+| `rewardReview()` | ~60k | ~$0.01 | Server wallet |
+| `declareWinner()` | ~80k | ~$0.015 | Server wallet |
+
+**Optional**: Sponsor gas for new users via Privy paymaster.
+
+### Architecture Diagram
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        PLAYGROUP                                │
+├────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────────────┐       ┌────────────────────────┐     │
+│  │     BASE CHAIN       │       │       DATABASE         │     │
+│  │                      │       │                        │     │
+│  │  PlaygroupCore.sol   │       │  - Album metadata      │     │
+│  │  ├─ albums[]         │◄─────►│  - Reviews (text)      │     │
+│  │  ├─ votes            │ sync  │  - User profiles       │     │
+│  │  ├─ bonusBalance     │       │  - Cycle management    │     │
+│  │  └─ events           │       │                        │     │
+│  │                      │       └────────────────────────┘     │
+│  │  $PLAY Token (ERC20) │                                      │
+│  │  └─ balances         │                                      │
+│  │                      │                                      │
+│  └──────────────────────┘                                      │
+│           ▲                                                     │
+│           │                                                     │
+│     User Actions                    Backend Triggers            │
+│     (submit, vote)                  (review reward, winner)     │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### New Files
+
+| File | Purpose | Effort |
+|------|---------|--------|
+| `contracts/PlaygroupCore.sol` | Main contract | High |
+| `src/lib/playgroup-contract.ts` | Viem client + ABI | Medium |
+| `src/hooks/use-playgroup-contract.ts` | React hooks for reads/writes | Medium |
+| `src/hooks/use-play-balance.ts` | Balance display hook | Small |
+| `src/db/actions/contract-sync-actions.ts` | Sync on-chain events → DB | Medium |
+
+### Modified Files
+
+| File | Changes | Effort |
+|------|---------|--------|
+| `src/features/app/components/submission-form.tsx` | Contract write instead of DB | Medium |
+| `src/features/app/components/vote-tab.tsx` | Contract write instead of DB | Medium |
+| `src/features/app/components/review-form.tsx` | Trigger `rewardReview()` after DB save | Small |
+| `src/db/actions/cycle-actions.ts` | Call `declareWinner()` on-chain | Small |
+| `src/features/app/components/profile-view.tsx` | Show $PLAY balance + tx history | Medium |
+| Header/Layout | Show $PLAY balance | Small |
+
+### Environment Variables
+
+```
+PLAY_TOKEN_ADDRESS=0x...         # Your $PLAY ERC-20 contract
+PLAYGROUP_CONTRACT_ADDRESS=0x... # Deployed PlaygroupCore contract
+```
+
+### AUX Code Patterns to Follow
+
+From AUX's docs, key patterns:
+
+```typescript
+// Client setup (like AUX)
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const PLAYGROUP_ADDRESS = '0x...';
+const client = createPublicClient({
+  chain: base,
+  transport: http('https://mainnet.base.org')
+});
+
+// Read album count
+const count = await client.readContract({
+  address: PLAYGROUP_ADDRESS,
+  abi: playgroupAbi,
+  functionName: 'getAlbumCount'
+});
+
+// Watch for new submissions
+client.watchContractEvent({
+  address: PLAYGROUP_ADDRESS,
+  abi: playgroupAbi,
+  eventName: 'AlbumSubmitted',
+  onLogs: (logs) => {
+    // Sync to database
+  }
+});
+```
+
+### Edge Cases
+
+| Scenario | Solution |
+|----------|----------|
+| Transaction fails | Show retry UI, don't update DB |
+| User rejects tx | Return to form, keep data |
+| Insufficient $PLAY | Show "Earn more" message |
+| Insufficient bonus | Deduct from $PLAY balance |
+| Network congestion | Show pending state, wait |
+| Contract paused | Show maintenance message |
+
+### Deployment Checklist
+
+1. [ ] User provides $PLAY token address
+2. [ ] Deploy PlaygroupCore contract on Base
+3. [ ] Transfer $PLAY supply to contract (for rewards)
+4. [ ] Set environment variables
+5. [ ] Update frontend to use contract
+6. [ ] Test on Base testnet first
+
+---
+
+## Implementation Order
+
+```
+#1 One-Week Cycles (no dependencies)
+         ↓
+#2 User Profile Page (foundational)
+         ↓
+#4 Universal Access (Privy) ← Wallets required for #5
+         ↓
+#5 $PLAY On-Chain ← Replaces #3 entirely
+```
+
+**Recommended**: Implement in order 1 → 2 → 4 → 5
+
+**Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build database points if going on-chain.
 
 ---
 
@@ -299,3 +545,6 @@ These items have been mentioned but not fully planned:
 | Date | Change |
 |------|--------|
 | 2025-02-08 | Initial roadmap created with 3 planned features |
+| 2025-02-08 | Added #4 Universal Access (Privy) |
+| 2025-02-08 | Added #5 $PLAY Token On-Chain (AUX-style) - supersedes #3 |
+| 2025-02-08 | Updated implementation order: 1 → 2 → 4 → 5 |
