@@ -158,17 +158,125 @@ pointTransactions: {
 
 ---
 
+### 4. Universal Access (Privy)
+
+**Complexity**: High | **Est. Time**: 3-4 hrs | **Dependencies**: Profile Page (#2)
+
+**Summary**: Allow anyone to join Playgroup via email, Google, or Farcaster. Non-Farcaster users get a Privy smart wallet automatically.
+
+**Vision**: Playgroup as a universal music app, not just a Farcaster app.
+
+**Auth Options**:
+
+| Method | Wallet | Identity |
+|--------|--------|----------|
+| Email | Privy smart wallet (auto-created) | Email + chosen username |
+| Google | Privy smart wallet (auto-created) | Google name + chosen username |
+| Farcaster | FC embedded wallet | FC username + PFP |
+
+**New Schema - Unified Users Table**:
+
+```typescript
+users: {
+  id: uuid (PK)              // Internal ID - ALL tables reference this
+  fid: integer (nullable)    // If signed up via Farcaster
+  privyId: text (nullable)   // If signed up via Privy
+  walletAddress: text        // Always present (FC or Privy wallet)
+  email: text (nullable)     // Privy users
+  username: text             // FC username OR chosen name
+  displayName: text          // Full display name
+  pfpUrl: text (nullable)    // FC pfp OR generated avatar
+  authProvider: 'farcaster' | 'privy'
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+**Migration Strategy**:
+
+Current FID-based columns → New userId-based columns:
+
+| Table | Old Column | New Column |
+|-------|------------|------------|
+| albums | `submittedByFid` | `submittedByUserId` |
+| votes | `voterFid` | `voterId` |
+| reviews | `reviewerFid` | `reviewerId` |
+| userPoints | `fid` | `userId` |
+
+**Migration Steps**:
+1. Create `users` table
+2. Add new `userId` columns (nullable initially)
+3. Backfill: create user records for existing FIDs
+4. Update all actions to use `userId`
+5. Drop old `fid` columns (or keep for reference)
+
+**New Files**:
+
+| File | Type | Effort |
+|------|------|--------|
+| `src/lib/privy.ts` | Privy client config | Small |
+| `src/hooks/use-auth.ts` | Unified auth hook (FC or Privy) | Medium |
+| `src/db/actions/user-actions.ts` | User CRUD, lookup, sync | Medium |
+| `src/features/app/components/login-modal.tsx` | Multi-provider login UI | Medium |
+
+**Modified Files**:
+
+| File | Changes | Effort |
+|------|---------|--------|
+| `src/db/schema.ts` | Add `users` table, update FKs | Medium |
+| `src/db/actions/submission-actions.ts` | FID → userId | Medium |
+| `src/db/actions/review-actions.ts` | FID → userId | Small |
+| `src/db/actions/cycle-actions.ts` | FID → userId | Small |
+| `src/db/actions/profile-actions.ts` | Use userId | Small |
+| `src/db/actions/points-actions.ts` | Use userId | Small |
+| All components using `useFarcasterUser` | Switch to `useAuth` | Medium |
+| `providers-and-initialization.tsx` | Add PrivyProvider | Small |
+
+**Environment Variables**:
+```
+NEXT_PUBLIC_PRIVY_APP_ID=your_app_id
+PRIVY_APP_SECRET=your_secret
+```
+
+**Username Handling**:
+
+| Signup Method | Username Source |
+|---------------|-----------------|
+| Farcaster | `@username` from FC |
+| Email | Email prefix (e.g., `alice@gmail.com` → `alice`) |
+| Google | Google display name or email prefix |
+
+**First Login Flow (Privy users)**:
+1. Sign up with email/Google
+2. Prompt: "Choose a display name" (optional)
+3. Auto-generate avatar via DiceBear API
+
+**Edge Cases**:
+
+| Scenario | Solution |
+|----------|----------|
+| User has both FC and Privy | Link accounts via wallet address match |
+| Email user later joins FC | Prompt to link accounts |
+| Username collision | Add number suffix (`alice2`) |
+| Privy user wants FC features | Show "Connect Farcaster" option |
+
+---
+
 ## Implementation Order
 
 ```
 #1 One-Week Cycles (no dependencies)
          ↓
-#2 User Profile Page (no dependencies, but nice to have before #3)
+#2 User Profile Page (foundational for #3 and #4)
          ↓
-#3 Point Economy (requires #2 for transaction history)
+#4 Universal Access (Privy) ← Do this BEFORE Points
+         ↓
+#3 Point Economy (uses new unified user system)
 ```
 
-**Recommended**: Implement in order 1 → 2 → 3
+**Recommended**: Implement in order 1 → 2 → 4 → 3
+
+Why #4 before #3? The Point Economy will use `userId` instead of `fid`. Better to migrate the identity system first, then build points on top of it.
 
 ---
 

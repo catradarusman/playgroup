@@ -119,6 +119,9 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 1 | One-Week Cycles (52 albums/year) | Low-Medium | Planned |
 | 2 | User Profile Page | Medium | Planned |
 | 3 | Point Economy | Medium-High | Planned |
+| 4 | Universal Access (Privy) | High | Planned |
+
+**Recommended order**: 1 → 2 → 4 → 3 (Privy before Points to establish unified user system)
 
 ---
 
@@ -135,3 +138,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | Added auto-vote on album submission                  |
 | 2025-02-08 | Updated typography to Outfit + JetBrains Mono        |
 | 2025-02-08 | Created roadmap.md with 3 planned features           |
+| 2025-02-08 | Added Universal Access (Privy) to roadmap            |
