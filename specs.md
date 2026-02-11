@@ -110,6 +110,18 @@
 
 ---
 
+## Roadmap
+
+See **[roadmap.md](./roadmap.md)** for planned features:
+
+| # | Feature | Complexity | Status |
+|---|---------|------------|--------|
+| 1 | One-Week Cycles (52 albums/year) | Low-Medium | Planned |
+| 2 | User Profile Page | Medium | Planned |
+| 3 | Point Economy | Medium-High | Planned |
+
+---
+
 ## Change Log
 
 | Date       | Change                                               |
@@ -122,3 +134,4 @@
 | 2025-02-08 | Auto-create first cycle on app load                  |
 | 2025-02-08 | Added auto-vote on album submission                  |
 | 2025-02-08 | Updated typography to Outfit + JetBrains Mono        |
+| 2025-02-08 | Created roadmap.md with 3 planned features           |
