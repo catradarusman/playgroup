@@ -156,6 +156,8 @@ pointTransactions: {
 - Race conditions (use DB transactions)
 - Zero balance state (show earn suggestions)
 
+> ⚠️ **Note**: Feature #3 is **superseded by #5** ($PLAY On-Chain). Skip this if implementing on-chain tokenomics.
+
 ---
 
 ### 4. Universal Access (Privy)
@@ -259,26 +261,6 @@ PRIVY_APP_SECRET=your_secret
 | Email user later joins FC | Prompt to link accounts |
 | Username collision | Add number suffix (`alice2`) |
 | Privy user wants FC features | Show "Connect Farcaster" option |
-
----
-
-## Implementation Order
-
-```
-#1 One-Week Cycles (no dependencies)
-         ↓
-#2 User Profile Page (foundational for #3 and #4)
-         ↓
-#4 Universal Access (Privy) ← Do this BEFORE Points
-         ↓
-#3 Point Economy (uses new unified user system)
-```
-
-**Recommended**: Implement in order 1 → 2 → 4 → 5 (skip #3, replaced by #5)
-
-Why this order?
-- #4 (Privy) establishes unified user system with wallet addresses
-- #5 ($PLAY on-chain) replaces #3 entirely - points are on-chain, not database
 
 ---
 
@@ -511,18 +493,39 @@ client.watchContractEvent({
 ## Implementation Order
 
 ```
-#1 One-Week Cycles (no dependencies)
+#1 One-Week Cycles (15-20 min)
          ↓
-#2 User Profile Page (foundational)
+#2 User Profile Page (45-60 min)
          ↓
-#4 Universal Access (Privy) ← Wallets required for #5
+#4 Universal Access / Privy (3-4 hrs) ← Wallets required for #5
          ↓
-#5 $PLAY On-Chain ← Replaces #3 entirely
+#5 $PLAY On-Chain (5-7 hrs) ← Replaces #3 entirely
 ```
 
-**Recommended**: Implement in order 1 → 2 → 4 → 5
+**Recommended**: 1 → 2 → 4 → 5
 
-**Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build database points if going on-chain.
+**Total Estimated Time**: ~10-12 hours
+
+| Feature | Why This Order |
+|---------|----------------|
+| #1 One-Week Cycles | No dependencies, quick win |
+| #2 User Profile | Foundation for all user features |
+| #4 Privy | Establishes wallet addresses for all users |
+| #5 $PLAY On-Chain | Requires wallets from #4 |
+
+> **Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build DB points if going on-chain.
+
+---
+
+## What You Need to Provide
+
+Before implementing Feature #5:
+
+| Item | Description |
+|------|-------------|
+| **$PLAY Token Address** | Your deployed ERC-20 contract on Base |
+| **Token Supply** | Confirm 1B supply |
+| **Deployment Decision** | Who deploys PlaygroupCore? (I write it, you deploy) |
 
 ---
 
