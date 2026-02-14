@@ -125,6 +125,9 @@ export function NowPlayingTab() {
             <div>
               <H2>{currentAlbum.title}</H2>
               <P className="text-gray-400">{currentAlbum.artist}</P>
+              <P className="text-xs text-gray-600 mt-1">
+                submitted by @{currentAlbum.submittedByUsername}
+              </P>
             </div>
 
             {phase === 'listening' && (
