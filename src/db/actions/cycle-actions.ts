@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/neynar-db-sdk/db';
-import { cycles, albums } from '@/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { cycles, albums, votes } from '@/db/schema';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 /**
  * Get the current active cycle
@@ -24,12 +24,24 @@ export async function getCurrentCycle() {
 
 /**
  * Get current cycle with countdown computed
+ * Auto-transitions from voting to listening when voting period ends
  */
 export async function getCycleWithCountdown() {
-  const cycle = await getCurrentCycle();
+  let cycle = await getCurrentCycle();
   if (!cycle) return null;
 
   const now = new Date();
+
+  // AUTO-TRANSITION: If voting period ended but phase is still 'voting', select winner
+  if (cycle.phase === 'voting' && now > cycle.votingEndsAt) {
+    const transitionResult = await autoTransitionToListening(cycle.id);
+    if (transitionResult.success) {
+      // Re-fetch the updated cycle
+      cycle = await getCurrentCycle();
+      if (!cycle) return null;
+    }
+  }
+
   const targetDate = cycle.phase === 'voting' ? cycle.votingEndsAt : cycle.endDate;
   const diff = targetDate.getTime() - now.getTime();
 
@@ -41,6 +53,69 @@ export async function getCycleWithCountdown() {
     ...cycle,
     countdown: { days, hours, minutes },
   };
+}
+
+/**
+ * Auto-transition from voting to listening phase
+ * Selects the winner based on votes
+ */
+async function autoTransitionToListening(cycleId: string) {
+  // Get all albums in voting status for this cycle with vote counts
+  const albumsResult = await db
+    .select()
+    .from(albums)
+    .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')));
+
+  if (albumsResult.length === 0) {
+    // No submissions - transition to listening anyway but with no winner
+    await db
+      .update(cycles)
+      .set({ phase: 'listening' })
+      .where(eq(cycles.id, cycleId));
+    return { success: true, winner: null };
+  }
+
+  // Get vote counts for each album
+  const albumsWithVotes = await Promise.all(
+    albumsResult.map(async (album) => {
+      const voteCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(votes)
+        .where(eq(votes.albumId, album.id));
+      return {
+        ...album,
+        voteCount: Number(voteCount[0]?.count ?? 0),
+      };
+    })
+  );
+
+  // Find the highest vote count
+  const maxVotes = Math.max(...albumsWithVotes.map((a) => a.voteCount));
+  const topAlbums = albumsWithVotes.filter((a) => a.voteCount === maxVotes);
+
+  // Tiebreaker: earliest submission wins (sort by createdAt ascending)
+  topAlbums.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const winner = topAlbums[0];
+
+  // Update winner status to 'selected'
+  await db
+    .update(albums)
+    .set({ status: 'selected' })
+    .where(eq(albums.id, winner.id));
+
+  // Update all other voting albums to 'lost'
+  await db
+    .update(albums)
+    .set({ status: 'lost' })
+    .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')));
+
+  // Update cycle with winner and phase
+  await db
+    .update(cycles)
+    .set({ winnerId: winner.id, phase: 'listening' })
+    .where(eq(cycles.id, cycleId));
+
+  return { success: true, winner };
 }
 
 /**
