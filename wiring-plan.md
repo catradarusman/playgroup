@@ -2,6 +2,7 @@
 
 > **Status**: ✅ All Features Complete
 > **Last Updated**: 2025-02-08
+> **Cycle Duration**: 1 week (52 albums/year)
 
 ---
 
@@ -200,3 +201,23 @@ No authentication required - Deezer API is public.
 5. **FID-Based Auth**: All user actions use Farcaster FID from `useFarcasterUser()`
 6. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
 7. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
+
+---
+
+## Cycle Schedule (1-Week)
+
+| Day              | Phase      | Activity                                |
+| ---------------- | ---------- | --------------------------------------- |
+| Monday           | Voting     | Voting opens, members submit albums     |
+| Mon–Thu          | Voting     | Community votes on submissions          |
+| Thursday 10pm WIB| Cutoff     | Voting closes, winner auto-selected     |
+| Friday           | Listening  | Winner announced, listening begins      |
+| Fri–Sun          | Listening  | Everyone listens together               |
+| Sat–Sun          | Reviewing  | Members write reviews                   |
+| Monday           | New Cycle  | Repeat                                  |
+
+**Cycle Configuration** (in `getOrCreateCurrentCycle()`):
+- Voting period: 4 days (Mon-Thu)
+- Listening period: 3 days (Fri-Sun)
+- Total cycle: 7 days
+- Albums per year: 52

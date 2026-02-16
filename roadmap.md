@@ -506,7 +506,7 @@ client.watchContractEvent({
 #5 $PLAY On-Chain (5-7 hrs) ← Replaces #3 entirely
 ```
 
-**Recommended**: ~~1~~ → 2 → 4 → 5
+**Recommended next**: 2 → 4 → 5
 
 **Total Estimated Time**: ~9-11 hours remaining
 
