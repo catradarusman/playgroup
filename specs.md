@@ -125,11 +125,12 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 |---|---------|------------|--------|
 | 1 | ~~One-Week Cycles (52 albums/year)~~ | ~~Low-Medium~~ | ✅ Implemented |
 | 2 | ~~User Profile Page~~ | ~~Medium~~ | ✅ Implemented |
-| 3 | ~~Point Economy (DB)~~ | ~~Medium-High~~ | Superseded by #5 |
-| 4 | Universal Access (Privy) | High | Planned |
-| 5 | $PLAY Token On-Chain (AUX-style) | High | Planned |
+| 3 | ~~Community Buzz (Farcaster)~~ | ~~Low-Medium~~ | ✅ Implemented |
+| 4 | ~~Point Economy (DB)~~ | ~~Medium-High~~ | Superseded by #6 |
+| 5 | Universal Access (Privy) | High | Planned |
+| 6 | $PLAY Token On-Chain (AUX-style) | High | Planned |
 
-**Recommended order**: 4 → 5
+**Recommended order**: 5 → 6
 
 **Total estimated time**: ~8-11 hours for remaining features
 

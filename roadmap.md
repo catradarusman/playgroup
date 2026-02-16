@@ -2,7 +2,7 @@
 
 > **Created**: 2025-02-08
 > **Last Updated**: 2025-02-08
-> **Status**: Feature #1 Implemented
+> **Status**: Features #1, #2, #3 Implemented
 
 ---
 
@@ -90,9 +90,48 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 
 ---
 
-### 3. Point Economy
+### 3. Community Buzz (Farcaster Integration) ✅ IMPLEMENTED
+
+**Complexity**: Low-Medium | **Est. Time**: 30-45 min | **Dependencies**: None
+
+**Summary**: Real-time Farcaster cast search showing community discussion about albums. Replaces the hardcoded "listener count" with actual engagement metrics.
+
+**Features**:
+
+| Feature | Description |
+|---------|-------------|
+| Cast Count | Shows number of Farcaster casts mentioning the album |
+| Community Buzz Section | Displays actual casts discussing the current album |
+| Clickable Profiles | Cast author names link to profile views |
+| Load More | Pagination for more casts |
+
+**New Files**:
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/hooks/use-album-buzz.ts` | NEW | Hook wrapping `useCastSearch` |
+| `src/features/app/components/album-buzz-section.tsx` | NEW | UI component for cast display |
+
+**Modified Files**:
+
+| File | Changes |
+|------|---------|
+| `src/features/app/components/now-playing-tab.tsx` | Replaced `useListenerCount` with `useAlbumBuzz`, added AlbumBuzzSection |
+| `src/features/app/components/album-detail-view.tsx` | Added AlbumBuzzSection |
+
+**Technical Details**:
+- Uses Neynar SDK `useCastSearch` hook
+- Search mode: `hybrid` (literal + semantic for best results)
+- Sort: `algorithmic` for most relevant casts first
+- Query: `"Album Title" "Artist Name"` for accurate matching
+
+---
+
+### 4. Point Economy (Database) — SUPERSEDED
 
 **Complexity**: Medium-High | **Est. Time**: 1.5-2 hrs | **Dependencies**: Profile Page (#2)
+
+> ⚠️ **SUPERSEDED**: This feature is replaced by #6 ($PLAY On-Chain). Skip if implementing on-chain tokenomics.
 
 **Summary**: Gamification system where users earn and spend points to participate.
 
@@ -160,11 +199,9 @@ pointTransactions: {
 - Race conditions (use DB transactions)
 - Zero balance state (show earn suggestions)
 
-> ⚠️ **Note**: Feature #3 is **superseded by #5** ($PLAY On-Chain). Skip this if implementing on-chain tokenomics.
-
 ---
 
-### 4. Universal Access (Privy)
+### 5. Universal Access (Privy)
 
 **Complexity**: High | **Est. Time**: 3-4 hrs | **Dependencies**: Profile Page (#2)
 
@@ -268,9 +305,9 @@ PRIVY_APP_SECRET=your_secret
 
 ---
 
-### 5. $PLAY Token On-Chain (AUX-Style)
+### 6. $PLAY Token On-Chain (AUX-Style)
 
-**Complexity**: High | **Est. Time**: 5-7 hrs | **Dependencies**: #2 (Profile), #4 (Privy/Wallets)
+**Complexity**: High | **Est. Time**: 5-7 hrs | **Dependencies**: #2 (Profile), #5 (Privy/Wallets)
 
 **Summary**: On-chain point economy using $PLAY ERC-20 token, modeled after AUX's ATTN system. Submissions and votes happen on-chain; metadata and reviews stay off-chain.
 
@@ -501,12 +538,14 @@ client.watchContractEvent({
          ↓
 #2 User Profile Page (45-60 min) ✅ DONE
          ↓
-#4 Universal Access / Privy (3-4 hrs) ← Wallets required for #5
+#3 Community Buzz (30-45 min) ✅ DONE
          ↓
-#5 $PLAY On-Chain (5-7 hrs) ← Replaces #3 entirely
+#5 Universal Access / Privy (3-4 hrs) ← Wallets required for #6
+         ↓
+#6 $PLAY On-Chain (5-7 hrs) ← Replaces #4 entirely
 ```
 
-**Recommended next**: 4 → 5
+**Recommended next**: 5 → 6
 
 **Total Estimated Time**: ~8-11 hours remaining
 
@@ -514,16 +553,17 @@ client.watchContractEvent({
 |---------|----------------|--------|
 | #1 One-Week Cycles | No dependencies, quick win | ✅ Done |
 | #2 User Profile | Foundation for all user features | ✅ Done |
-| #4 Privy | Establishes wallet addresses for all users | Next |
-| #5 $PLAY On-Chain | Requires wallets from #4 | Planned |
+| #3 Community Buzz | Farcaster engagement integration | ✅ Done |
+| #5 Privy | Establishes wallet addresses for all users | Next |
+| #6 $PLAY On-Chain | Requires wallets from #5 | Planned |
 
-> **Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build DB points if going on-chain.
+> **Note**: Feature #4 (Point Economy - database) is **superseded** by #6. No need to build DB points if going on-chain.
 
 ---
 
 ## What You Need to Provide
 
-Before implementing Feature #5:
+Before implementing Feature #6:
 
 | Item | Description |
 |------|-------------|
@@ -553,7 +593,9 @@ These items have been mentioned but not fully planned:
 |------|--------|
 | 2025-02-08 | Initial roadmap created with 3 planned features |
 | 2025-02-08 | Added #4 Universal Access (Privy) |
-| 2025-02-08 | Added #5 $PLAY Token On-Chain (AUX-style) - supersedes #3 |
+| 2025-02-08 | Added #5 $PLAY Token On-Chain (AUX-style) - supersedes Point Economy |
 | 2025-02-08 | Updated implementation order: 1 → 2 → 4 → 5 |
 | 2025-02-08 | **✅ Implemented Feature #1: One-Week Cycles** |
 | 2025-02-08 | **✅ Implemented Feature #2: User Profile Page** |
+| 2025-02-08 | **✅ Implemented Feature #3: Community Buzz** (Farcaster cast search) |
+| 2025-02-08 | Renumbered features: Point Economy → #4, Privy → #5, $PLAY → #6 |
