@@ -9,7 +9,11 @@ import { CycleStatusBanner } from './cycle-status-banner';
 import { HowItWorks } from './how-it-works';
 import { AlbumDetailView } from './album-detail-view';
 
-export function NowPlayingTab() {
+interface NowPlayingTabProps {
+  onViewProfile?: (fid: number) => void;
+}
+
+export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   const [view, setView] = useState<'main' | 'detail'>('main');
 
   // Real data hooks
@@ -45,6 +49,7 @@ export function NowPlayingTab() {
         onBack={() => setView('main')}
         canReview={phase === 'listening'}
         userFid={user?.fid ?? null}
+        onViewProfile={onViewProfile}
       />
     );
   }
@@ -126,7 +131,13 @@ export function NowPlayingTab() {
               <H2>{currentAlbum.title}</H2>
               <P className="text-gray-400">{currentAlbum.artist}</P>
               <P className="text-xs text-gray-600 mt-1">
-                submitted by @{currentAlbum.submittedByUsername}
+                submitted by{' '}
+                <button
+                  onClick={() => currentAlbum.submittedByFid && onViewProfile?.(currentAlbum.submittedByFid)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  @{currentAlbum.submittedByUsername}
+                </button>
               </P>
             </div>
 

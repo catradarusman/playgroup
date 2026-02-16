@@ -15,6 +15,7 @@ export interface SubmissionData {
   coverUrl: string;
   spotifyUrl: string;
   votes: number;
+  submitterFid: number;
   submitter: string;
   daysAgo: number;
   hasVoted: boolean;

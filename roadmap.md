@@ -52,7 +52,7 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 
 ---
 
-### 2. User Profile Page
+### 2. User Profile Page ✅ IMPLEMENTED
 
 **Complexity**: Medium | **Est. Time**: 45-60 min | **Dependencies**: None
 
@@ -499,22 +499,22 @@ client.watchContractEvent({
 ```
 #1 One-Week Cycles (15-20 min) ✅ DONE
          ↓
-#2 User Profile Page (45-60 min)
+#2 User Profile Page (45-60 min) ✅ DONE
          ↓
 #4 Universal Access / Privy (3-4 hrs) ← Wallets required for #5
          ↓
 #5 $PLAY On-Chain (5-7 hrs) ← Replaces #3 entirely
 ```
 
-**Recommended next**: 2 → 4 → 5
+**Recommended next**: 4 → 5
 
-**Total Estimated Time**: ~9-11 hours remaining
+**Total Estimated Time**: ~8-11 hours remaining
 
 | Feature | Why This Order | Status |
 |---------|----------------|--------|
 | #1 One-Week Cycles | No dependencies, quick win | ✅ Done |
-| #2 User Profile | Foundation for all user features | Next |
-| #4 Privy | Establishes wallet addresses for all users | Planned |
+| #2 User Profile | Foundation for all user features | ✅ Done |
+| #4 Privy | Establishes wallet addresses for all users | Next |
 | #5 $PLAY On-Chain | Requires wallets from #4 | Planned |
 
 > **Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build DB points if going on-chain.
@@ -556,3 +556,4 @@ These items have been mentioned but not fully planned:
 | 2025-02-08 | Added #5 $PLAY Token On-Chain (AUX-style) - supersedes #3 |
 | 2025-02-08 | Updated implementation order: 1 → 2 → 4 → 5 |
 | 2025-02-08 | **✅ Implemented Feature #1: One-Week Cycles** |
+| 2025-02-08 | **✅ Implemented Feature #2: User Profile Page** |

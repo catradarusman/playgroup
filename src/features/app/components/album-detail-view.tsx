@@ -22,6 +22,7 @@ interface AlbumForDisplay {
 
 interface ReviewForDisplay {
   id: string | number;
+  fid?: number;
   user: string;
   displayName?: string;
   pfp: string;
@@ -38,6 +39,7 @@ interface AlbumDetailViewProps {
   onBack: () => void;
   canReview: boolean;
   userFid?: number | null;
+  onViewProfile?: (fid: number) => void;
 }
 
 export function AlbumDetailView({
@@ -47,6 +49,7 @@ export function AlbumDetailView({
   onBack,
   canReview,
   userFid: propUserFid,
+  onViewProfile,
 }: AlbumDetailViewProps) {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
@@ -174,7 +177,12 @@ export function AlbumDetailView({
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <img src={review.pfp} className="w-8 h-8 rounded-full" alt="" />
-                      <span className="font-medium text-white">@{review.user}</span>
+                      <button
+                        onClick={() => review.fid && onViewProfile?.(review.fid)}
+                        className="font-medium text-white hover:text-gray-300 transition-colors"
+                      >
+                        @{review.user}
+                      </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-white">{review.rating}/5</span>

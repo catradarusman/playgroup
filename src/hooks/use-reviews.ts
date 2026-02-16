@@ -5,6 +5,7 @@ import { getAlbumReviews, submitReview, getUserReview } from '@/db/actions/revie
 
 export interface ReviewData {
   id: string;
+  fid: number;
   user: string;
   displayName: string;
   pfp: string;

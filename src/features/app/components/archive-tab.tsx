@@ -7,7 +7,11 @@ import { usePastAlbums } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';
 import { AlbumDetailView } from './album-detail-view';
 
-export function ArchiveTab() {
+interface ArchiveTabProps {
+  onViewProfile?: (fid: number) => void;
+}
+
+export function ArchiveTab({ onViewProfile }: ArchiveTabProps) {
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
 
   // Get past albums from database
@@ -59,6 +63,7 @@ export function ArchiveTab() {
         tracks={selectedAlbum.tracks ?? []}
         onBack={() => setSelectedAlbumId(null)}
         canReview={true}
+        onViewProfile={onViewProfile}
       />
     );
   }

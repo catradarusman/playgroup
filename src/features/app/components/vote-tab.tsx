@@ -7,7 +7,11 @@ import { useCycle } from '@/hooks/use-cycle';
 import { useSubmissions, useVote } from '@/hooks/use-submissions';
 import { SubmissionForm } from './submission-form';
 
-export function VoteTab() {
+interface VoteTabProps {
+  onViewProfile?: (fid: number) => void;
+}
+
+export function VoteTab({ onViewProfile }: VoteTabProps) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
   // Get user from Farcaster context
@@ -140,7 +144,16 @@ export function VoteTab() {
                       <P className="font-medium text-sm text-white truncate">{album.title}</P>
                       <P className="text-xs text-gray-400">{album.artist}</P>
                       <P className="text-xs text-gray-600">
-                        @{album.submitter} • {album.daysAgo}d ago
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewProfile?.(album.submitterFid);
+                          }}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          @{album.submitter}
+                        </button>
+                        {' '}• {album.daysAgo}d ago
                       </P>
                     </div>
                     <div className="flex flex-col items-center gap-1">

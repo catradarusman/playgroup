@@ -71,6 +71,7 @@ export async function getAlbumReviews(albumId: string) {
 
   return result.map((r) => ({
     id: r.id,
+    fid: r.reviewerFid,
     user: r.reviewerUsername,
     displayName: r.reviewerUsername,
     pfp: r.reviewerPfp || `https://api.dicebear.com/9.x/lorelei/svg?seed=${r.reviewerFid}`,

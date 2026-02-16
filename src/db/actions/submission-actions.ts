@@ -95,6 +95,7 @@ export async function getSubmissions(cycleId: string) {
         coverUrl: album.coverUrl,
         spotifyUrl: album.spotifyUrl,
         votes: Number(voteCount[0]?.count ?? 0),
+        submitterFid: album.submittedByFid,
         submitter: album.submittedByUsername,
         daysAgo: Math.floor((Date.now() - album.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
       };
