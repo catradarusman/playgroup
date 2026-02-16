@@ -117,14 +117,14 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | # | Feature | Complexity | Status |
 |---|---------|------------|--------|
 | 1 | ~~One-Week Cycles (52 albums/year)~~ | ~~Low-Medium~~ | ✅ Implemented |
-| 2 | User Profile Page | Medium | Planned |
+| 2 | ~~User Profile Page~~ | ~~Medium~~ | ✅ Implemented |
 | 3 | ~~Point Economy (DB)~~ | ~~Medium-High~~ | Superseded by #5 |
 | 4 | Universal Access (Privy) | High | Planned |
 | 5 | $PLAY Token On-Chain (AUX-style) | High | Planned |
 
-**Recommended order**: 1 → 2 → 4 → 5
+**Recommended order**: 4 → 5
 
-**Total estimated time**: ~10-12 hours for all features
+**Total estimated time**: ~8-11 hours for remaining features
 
 ---
 
@@ -144,3 +144,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | Added Universal Access (Privy) to roadmap            |
 | 2025-02-08 | Added $PLAY Token On-Chain (AUX-style) to roadmap    |
 | 2025-02-08 | **Implemented One-Week Cycles** (26→52 albums/year)  |
+| 2025-02-08 | **Implemented User Profile Page** (header icon, clickable usernames) |

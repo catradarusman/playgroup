@@ -16,6 +16,7 @@
 | Album Metadata       | external | ✅ Complete | Deezer API (no auth needed)     |
 | User Identity        | social   | ✅ Complete | Farcaster FID-based             |
 | Share Buttons        | sharing  | ✅ Complete | 3 personalized share types      |
+| User Profiles        | social   | ✅ Complete | Header icon, clickable usernames |
 
 ---
 
@@ -105,6 +106,10 @@ createdAt        TIMESTAMP DEFAULT NOW()
 - `getUserReview(albumId, fid)` - Check if user reviewed
 - `updateAlbumStats(albumId)` - Recalculate stats
 
+### Profile Actions (`src/db/actions/profile-actions.ts`)
+- `getProfileByFid(fid)` - Get complete profile data (submissions, reviews, stats)
+- `getUserInfoByFid(fid)` - Get basic user info (username, pfp) from DB
+
 ---
 
 ## React Hooks
@@ -126,6 +131,10 @@ createdAt        TIMESTAMP DEFAULT NOW()
 - `useUserReview(albumId, fid)` - Check user's review
 - `useSubmitReview()` - Mutation for submitting
 
+### `src/hooks/use-profile.ts`
+- `useProfile(fid)` - Full profile data (submissions, reviews, stats, memberSince)
+- `useUserInfo(fid)` - Basic user info lookup for other users' profiles
+
 ---
 
 ## External API
@@ -145,9 +154,11 @@ No authentication required - Deezer API is public.
 
 | Component              | Location                                      | Data Source        |
 | ---------------------- | --------------------------------------------- | ------------------ |
+| `MiniApp`              | `src/features/app/`                           | useFarcasterUser, profile state |
 | `NowPlayingTab`        | `src/features/app/components/`                | useCycle, useCurrentAlbum |
 | `VoteTab`              | `src/features/app/components/`                | useSubmissions, useVote |
 | `ArchiveTab`           | `src/features/app/components/`                | usePastAlbums |
+| `ProfileView`          | `src/features/app/components/`                | useProfile, useUserInfo |
 | `SubmissionForm`       | `src/features/app/components/`                | Deezer API, useSubmitAlbum |
 | `AlbumDetailView`      | `src/features/app/components/`                | useReviews |
 | `ReviewForm`           | `src/features/app/components/`                | useSubmitReview |
@@ -201,6 +212,8 @@ No authentication required - Deezer API is public.
 5. **FID-Based Auth**: All user actions use Farcaster FID from `useFarcasterUser()`
 6. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
 7. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
+8. **User Profiles**: Access via header avatar icon, clickable usernames throughout app
+9. **Profile Stats**: Submissions, wins, votes received, reviews, avg rating given, member since
 
 ---
 
