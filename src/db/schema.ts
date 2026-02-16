@@ -28,6 +28,24 @@ export const kv = pgTable("kv", {
 // ===========================================
 
 /**
+ * Users - unified identity for Farcaster + Privy users
+ * Supports account linking via wallet address
+ */
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fid: integer("fid"), // Farcaster ID (nullable - only FC users)
+  privyId: text("privy_id"), // Privy ID (nullable - only Privy users)
+  walletAddress: text("wallet_address"), // Always present (FC embedded or Privy smart wallet)
+  email: text("email"), // Privy users only
+  username: text("username").notNull(), // FC username OR derived from email
+  displayName: text("display_name").notNull(), // Full display name
+  pfpUrl: text("pfp_url"), // FC pfp OR DiceBear generated
+  authProvider: text("auth_provider").notNull(), // 'farcaster' | 'privy'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
  * Cycles - 1-week listening cycles (52 per year)
  */
 export const cycles = pgTable("cycles", {
@@ -53,7 +71,8 @@ export const albums = pgTable("albums", {
   coverUrl: text("cover_url").notNull(),
   spotifyUrl: text("spotify_url").notNull(),
   cycleId: uuid("cycle_id").notNull(),
-  submittedByFid: integer("submitted_by_fid").notNull(),
+  submittedByFid: integer("submitted_by_fid"), // Legacy - nullable for new users
+  submittedByUserId: uuid("submitted_by_user_id"), // New - references users.id
   submittedByUsername: text("submitted_by_username").notNull(),
   status: text("status").notNull(), // 'voting' | 'selected' | 'lost'
   avgRating: real("avg_rating"),
@@ -70,7 +89,8 @@ export const albums = pgTable("albums", {
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
   albumId: uuid("album_id").notNull(),
-  voterFid: integer("voter_fid").notNull(),
+  voterFid: integer("voter_fid"), // Legacy - nullable for new users
+  voterId: uuid("voter_id"), // New - references users.id
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -80,7 +100,8 @@ export const votes = pgTable("votes", {
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
   albumId: uuid("album_id").notNull(),
-  reviewerFid: integer("reviewer_fid").notNull(),
+  reviewerFid: integer("reviewer_fid"), // Legacy - nullable for new users
+  reviewerId: uuid("reviewer_id"), // New - references users.id
   reviewerUsername: text("reviewer_username").notNull(),
   reviewerPfp: text("reviewer_pfp"),
   rating: integer("rating").notNull(), // 1-5
