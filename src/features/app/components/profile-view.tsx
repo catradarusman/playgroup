@@ -22,7 +22,7 @@ export function ProfileView({ fid, onBack, onViewAlbum }: ProfileViewProps) {
     ? currentUser?.username
     : userInfo?.username ?? `User ${fid}`;
   const displayPfp = isOwnProfile
-    ? currentUser?.pfp_url
+    ? currentUser?.pfpUrl
     : userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`;
 
   if (isLoading) {

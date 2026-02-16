@@ -93,8 +93,10 @@ export function useUserInfo(fid: number | null) {
     }
 
     async function fetch() {
+      if (!fid) return;
       const info = await getUserInfoByFid(fid);
-      setUserInfo(info);
+      // Convert null pfp to undefined to match state type
+      setUserInfo(info ? { username: info.username, pfp: info.pfp ?? undefined } : null);
       setIsLoading(false);
     }
 
