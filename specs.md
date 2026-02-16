@@ -12,9 +12,9 @@
 | ------------------- | -------------------------------------------------------------------------- |
 | **Type**            | Social / Music Community                                                   |
 | **Target Audience** | Music lovers who want intentional, slow listening over algorithmic feeds   |
-| **Core Experience** | Vote on albums → Listen together for 2 weeks → Review and discuss          |
+| **Core Experience** | Vote on albums → Listen together for 1 week → Review and discuss           |
 
-**Mission**: Resist algorithmic consumption. Respect music through slow, collective listening. 26 albums a year. Zero algorithms.
+**Mission**: Resist algorithmic consumption. Respect music through slow, collective listening. 52 albums a year. Zero algorithms.
 
 ---
 
@@ -29,17 +29,17 @@
 
 ---
 
-## Core Loop (2-Week Cycle)
+## Core Loop (1-Week Cycle)
 
-| Day           | Phase      | Activity                                    |
-| ------------- | ---------- | ------------------------------------------- |
-| Monday        | Voting     | Voting opens, members submit albums         |
-| Mon–Fri       | Voting     | Community votes on submissions              |
-| Friday 10pm WIB | Cutoff   | Voting closes, winner auto-selected         |
-| Saturday      | Listening  | Winner announced, listening begins          |
-| Sat–Fri       | Listening  | Everyone listens on Spotify                 |
-| Sat–Sun (next)| Reviewing  | Members write reviews                       |
-| Monday        | New Cycle  | Repeat                                      |
+| Day              | Phase      | Activity                                    |
+| ---------------- | ---------- | ------------------------------------------- |
+| Monday           | Voting     | Voting opens, members submit albums         |
+| Mon–Thu          | Voting     | Community votes on submissions              |
+| Thursday 10pm WIB| Cutoff     | Voting closes, winner auto-selected         |
+| Friday           | Listening  | Winner announced, listening begins          |
+| Fri–Sun          | Listening  | Everyone listens together                   |
+| Sat–Sun          | Reviewing  | Members write reviews                       |
+| Monday           | New Cycle  | Repeat                                      |
 
 ---
 
@@ -67,8 +67,8 @@
 - ✅ Favorite track picker
 - ✅ One review per album per user
 
-### Archive (The 26)
-- ✅ Visual 26-square progress grid
+### Archive (The 52)
+- ✅ Visual 52-square progress grid
 - ✅ Past albums with ratings and reviews
 - ✅ Year-based tracking
 
@@ -85,7 +85,7 @@
 
 | Table    | Purpose                          |
 | -------- | -------------------------------- |
-| cycles   | 2-week listening cycles          |
+| cycles   | 1-week listening cycles          |
 | albums   | Submitted and winning albums     |
 | votes    | User votes on albums             |
 | reviews  | User reviews with ratings        |
@@ -116,7 +116,7 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 
 | # | Feature | Complexity | Status |
 |---|---------|------------|--------|
-| 1 | One-Week Cycles (52 albums/year) | Low-Medium | Planned |
+| 1 | ~~One-Week Cycles (52 albums/year)~~ | ~~Low-Medium~~ | ✅ Implemented |
 | 2 | User Profile Page | Medium | Planned |
 | 3 | ~~Point Economy (DB)~~ | ~~Medium-High~~ | Superseded by #5 |
 | 4 | Universal Access (Privy) | High | Planned |
@@ -143,3 +143,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | Created roadmap.md with 3 planned features           |
 | 2025-02-08 | Added Universal Access (Privy) to roadmap            |
 | 2025-02-08 | Added $PLAY Token On-Chain (AUX-style) to roadmap    |
+| 2025-02-08 | **Implemented One-Week Cycles** (26→52 albums/year)  |

@@ -14,7 +14,7 @@ export function HowItWorks() {
             </div>
             <div>
               <P className="font-medium text-sm text-white">Submit & Vote</P>
-              <P className="text-xs text-gray-400">Mon-Fri: Share Spotify albums, upvote favorites</P>
+              <P className="text-xs text-gray-400">Mon-Thu: Share albums, upvote favorites</P>
             </div>
           </div>
           <div className="flex gap-3">
@@ -23,7 +23,7 @@ export function HowItWorks() {
             </div>
             <div>
               <P className="font-medium text-sm text-white">Listen Together</P>
-              <P className="text-xs text-gray-400">Sat-Fri: Winner announced, everyone listens</P>
+              <P className="text-xs text-gray-400">Fri-Sun: Winner announced, everyone listens</P>
             </div>
           </div>
           <div className="flex gap-3">

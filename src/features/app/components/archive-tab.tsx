@@ -17,7 +17,7 @@ export function ArchiveTab() {
   const { reviews } = useReviews(selectedAlbumId);
 
   const albumsThisYear = albums.length;
-  const albumsRemaining = 26 - albumsThisYear;
+  const albumsRemaining = 52 - albumsThisYear;
   const totalReviews = albums.reduce((sum, a) => sum + (a.totalReviews ?? 0), 0);
   const avgRating = albumsThisYear > 0
     ? (albums.reduce((sum, a) => sum + (a.avgRating ?? 0), 0) / albumsThisYear).toFixed(1)
@@ -78,11 +78,11 @@ export function ArchiveTab() {
       <Card>
         <CardContent className="p-4">
           <P className="text-center text-sm font-medium text-white mb-3">{new Date().getFullYear()} Journey</P>
-          <div className="flex flex-wrap gap-1.5 justify-center">
-            {Array.from({ length: 26 }).map((_, i) => (
+          <div className="flex flex-wrap gap-1 justify-center">
+            {Array.from({ length: 52 }).map((_, i) => (
               <div
                 key={i}
-                className={`w-5 h-5 rounded-sm cursor-pointer transition-transform hover:scale-110 ${
+                className={`w-4 h-4 rounded-sm cursor-pointer transition-transform hover:scale-110 ${
                   i < albumsThisYear ? 'bg-white' : 'bg-gray-800'
                 }`}
                 onClick={() => i < albumsThisYear && setSelectedAlbumId(albums[i]?.id ?? null)}
@@ -170,7 +170,7 @@ export function ArchiveTab() {
       <ShareButton
         variant="secondary"
         className="w-full"
-        text={`Our Playgroup ${new Date().getFullYear()} journey: ${albumsThisYear}/26 albums discovered, ${totalReviews} reviews written, ${avgRating}/5 avg rating! Join us in exploring great music together.`}
+        text={`Our Playgroup ${new Date().getFullYear()} journey: ${albumsThisYear}/52 albums discovered, ${totalReviews} reviews written, ${avgRating}/5 avg rating! Join us in exploring great music together.`}
         queryParams={{
           shareType: 'journey',
           year: new Date().getFullYear().toString(),

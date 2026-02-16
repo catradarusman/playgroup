@@ -38,7 +38,7 @@ export async function submitAlbum(data: {
     .limit(1);
 
   if (pastWinner.length > 0) {
-    return { success: false, error: 'This won before - check The 26!' };
+    return { success: false, error: 'This won before - check The 52!' };
   }
 
   // Insert the album

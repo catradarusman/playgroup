@@ -2,7 +2,7 @@
 
 > **Created**: 2025-02-08
 > **Last Updated**: 2025-02-08
-> **Status**: Planning
+> **Status**: Feature #1 Implemented
 
 ---
 
@@ -14,13 +14,13 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 
 ## Planned Features
 
-### 1. One-Week Cycles
+### 1. One-Week Cycles ✅ IMPLEMENTED
 
 **Complexity**: Low-Medium | **Est. Time**: 15-20 min | **Dependencies**: None
 
-**Summary**: Reduce cycle length from 2 weeks to 1 week, doubling album throughput to 52 albums/year.
+**Summary**: Reduced cycle length from 2 weeks to 1 week, doubling album throughput to 52 albums/year.
 
-**New Schedule**:
+**Current Schedule**:
 
 | Day | Activity |
 |-----|----------|
@@ -30,17 +30,21 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 | Fri-Sun | Listening + reviewing |
 | Sunday EOD | Cycle ends |
 
-**Changes Required**:
+**Changes Made**:
 
-| File | Changes | Effort |
+| File | Changes | Status |
 |------|---------|--------|
-| `src/db/actions/cycle-actions.ts` | Update date calculations | Small |
-| `src/features/app/components/how-it-works.tsx` | Update copy (26 → 52 albums) | Tiny |
-| `src/features/app/components/cycle-status-banner.tsx` | Update any hardcoded text | Tiny |
-| `specs.md` | Update documentation | Tiny |
+| `src/db/actions/cycle-actions.ts` | 5→4 days voting, 14→7 days total | ✅ Done |
+| `src/db/schema.ts` | Comment updated (26→52) | ✅ Done |
+| `src/features/app/components/how-it-works.tsx` | Copy updated | ✅ Done |
+| `src/features/app/components/archive-tab.tsx` | 26→52 (3 places), smaller grid | ✅ Done |
+| `src/features/app/components/now-playing-tab.tsx` | 26→52 (2 places) | ✅ Done |
+| `src/app/api/share/image/[type]/route.tsx` | 26→52 in share image | ✅ Done |
+| `src/db/actions/submission-actions.ts` | "The 26"→"The 52" error | ✅ Done |
+| `specs.md` | Updated documentation | ✅ Done |
 
-**What Stays the Same**:
-- Database schema (no migration)
+**What Stayed the Same**:
+- Database schema (no migration needed)
 - Voting system
 - Review system
 - Archive display (already year-based)
@@ -493,7 +497,7 @@ client.watchContractEvent({
 ## Implementation Order
 
 ```
-#1 One-Week Cycles (15-20 min)
+#1 One-Week Cycles (15-20 min) ✅ DONE
          ↓
 #2 User Profile Page (45-60 min)
          ↓
@@ -502,16 +506,16 @@ client.watchContractEvent({
 #5 $PLAY On-Chain (5-7 hrs) ← Replaces #3 entirely
 ```
 
-**Recommended**: 1 → 2 → 4 → 5
+**Recommended**: ~~1~~ → 2 → 4 → 5
 
-**Total Estimated Time**: ~10-12 hours
+**Total Estimated Time**: ~9-11 hours remaining
 
-| Feature | Why This Order |
-|---------|----------------|
-| #1 One-Week Cycles | No dependencies, quick win |
-| #2 User Profile | Foundation for all user features |
-| #4 Privy | Establishes wallet addresses for all users |
-| #5 $PLAY On-Chain | Requires wallets from #4 |
+| Feature | Why This Order | Status |
+|---------|----------------|--------|
+| #1 One-Week Cycles | No dependencies, quick win | ✅ Done |
+| #2 User Profile | Foundation for all user features | Next |
+| #4 Privy | Establishes wallet addresses for all users | Planned |
+| #5 $PLAY On-Chain | Requires wallets from #4 | Planned |
 
 > **Note**: Feature #3 (Point Economy - database) is **superseded** by #5. No need to build DB points if going on-chain.
 
@@ -551,3 +555,4 @@ These items have been mentioned but not fully planned:
 | 2025-02-08 | Added #4 Universal Access (Privy) |
 | 2025-02-08 | Added #5 $PLAY Token On-Chain (AUX-style) - supersedes #3 |
 | 2025-02-08 | Updated implementation order: 1 → 2 → 4 → 5 |
+| 2025-02-08 | **✅ Implemented Feature #1: One-Week Cycles** |

@@ -28,7 +28,7 @@ export const kv = pgTable("kv", {
 // ===========================================
 
 /**
- * Cycles - 2-week listening cycles (26 per year)
+ * Cycles - 1-week listening cycles (52 per year)
  */
 export const cycles = pgTable("cycles", {
   id: uuid("id").primaryKey().defaultRandom(),

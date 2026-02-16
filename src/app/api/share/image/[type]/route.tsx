@@ -290,7 +290,7 @@ export async function GET(
               color: 'white',
             }}
           >
-            {albumsCompleted}/26 Albums
+            {albumsCompleted}/52 Albums
           </div>
           <div
             style={{

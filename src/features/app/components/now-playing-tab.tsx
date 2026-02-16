@@ -107,7 +107,7 @@ export function NowPlayingTab() {
               {phase === 'listening' ? 'Now Listening' : "Last Week's Winner"}
             </P>
             <P className="text-xs text-gray-600">
-              Week {currentAlbum.weekNumber} of 26
+              Week {currentAlbum.weekNumber} of 52
             </P>
             {currentAlbum.coverUrl ? (
               <img
@@ -163,7 +163,7 @@ export function NowPlayingTab() {
       <ShareButton
         variant="secondary"
         className="w-full"
-        text={`Now listening to "${currentAlbum.title}" by ${currentAlbum.artist} on Playgroup. Week ${currentAlbum.weekNumber} of our 26-album journey.`}
+        text={`Now listening to "${currentAlbum.title}" by ${currentAlbum.artist} on Playgroup. Week ${currentAlbum.weekNumber} of our 52-album journey.`}
         queryParams={{
           shareType: 'album',
           albumTitle: currentAlbum.title,

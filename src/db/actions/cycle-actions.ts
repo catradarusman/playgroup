@@ -244,17 +244,17 @@ export async function getOrCreateCurrentCycle() {
   const now = new Date();
   const year = now.getFullYear();
 
-  // Calculate cycle dates: 2 weeks total
-  // Voting: Mon-Fri (5 days), Listening: Sat-Sun + next Mon-Fri + Sat-Sun (9 days)
+  // Calculate cycle dates: 1 week total
+  // Voting: Mon-Thu (4 days), Listening: Fri-Sun (3 days)
   const startDate = new Date(now);
   startDate.setHours(0, 0, 0, 0);
 
   const votingEndsAt = new Date(startDate);
-  votingEndsAt.setDate(votingEndsAt.getDate() + 5); // 5 days for voting
+  votingEndsAt.setDate(votingEndsAt.getDate() + 4); // 4 days for voting (Mon-Thu)
   votingEndsAt.setHours(22, 0, 0, 0); // 10pm
 
   const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + 14); // 2 weeks total
+  endDate.setDate(endDate.getDate() + 7); // 1 week total
   endDate.setHours(23, 59, 59, 999);
 
   const newCycle = await createCycle({
