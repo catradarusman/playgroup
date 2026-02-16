@@ -5,6 +5,7 @@ import { Card, CardContent, H2, H4, P, Button } from '@neynar/ui';
 import { useFarcasterUser, ShareButton } from '@/neynar-farcaster-sdk/mini';
 import { useUserReview } from '@/hooks/use-reviews';
 import { ReviewForm } from './review-form';
+import { AlbumBuzzSection } from './album-buzz-section';
 
 interface AlbumForDisplay {
   id?: string;
@@ -199,6 +200,13 @@ export function AlbumDetailView({
           )}
         </CardContent>
       </Card>
+
+      {/* Community Buzz - Farcaster casts mentioning this album */}
+      <AlbumBuzzSection
+        albumTitle={album.title}
+        albumArtist={album.artist}
+        onViewProfile={onViewProfile}
+      />
 
       {/* Share */}
       <ShareButton

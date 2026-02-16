@@ -77,6 +77,12 @@
 - ✅ Share journey stats
 - ✅ Personalized share images
 
+### Community Buzz
+- ✅ Real-time Farcaster cast search for album mentions
+- ✅ Shows casts discussing the current album
+- ✅ Cast count replaces placeholder listener metric
+- ✅ Clickable usernames to view profiles
+
 ---
 
 ## Data Architecture
@@ -95,6 +101,7 @@
 | API      | Purpose                          | Auth           |
 | -------- | -------------------------------- | -------------- |
 | Deezer   | Album metadata & cover art       | None required  |
+| Neynar   | Farcaster cast search            | Built-in SDK   |
 
 ---
 
@@ -145,3 +152,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | Added $PLAY Token On-Chain (AUX-style) to roadmap    |
 | 2025-02-08 | **Implemented One-Week Cycles** (26→52 albums/year)  |
 | 2025-02-08 | **Implemented User Profile Page** (header icon, clickable usernames) |
+| 2025-02-08 | **Implemented Community Buzz** (Farcaster cast search, real engagement metrics) |

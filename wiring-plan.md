@@ -17,6 +17,7 @@
 | User Identity        | social   | ✅ Complete | Farcaster FID-based             |
 | Share Buttons        | sharing  | ✅ Complete | 3 personalized share types      |
 | User Profiles        | social   | ✅ Complete | Header icon, clickable usernames |
+| Community Buzz       | social   | ✅ Complete | Farcaster cast search for albums |
 
 ---
 
@@ -135,6 +136,10 @@ createdAt        TIMESTAMP DEFAULT NOW()
 - `useProfile(fid)` - Full profile data (submissions, reviews, stats, memberSince)
 - `useUserInfo(fid)` - Basic user info lookup for other users' profiles
 
+### `src/hooks/use-album-buzz.ts`
+- `useAlbumBuzz(title, artist)` - Search Farcaster casts mentioning album
+- Returns: casts[], count, isLoading, hasMore, loadMore()
+
 ---
 
 ## External API
@@ -160,8 +165,9 @@ No authentication required - Deezer API is public.
 | `ArchiveTab`           | `src/features/app/components/`                | usePastAlbums |
 | `ProfileView`          | `src/features/app/components/`                | useProfile, useUserInfo |
 | `SubmissionForm`       | `src/features/app/components/`                | Deezer API, useSubmitAlbum |
-| `AlbumDetailView`      | `src/features/app/components/`                | useReviews |
+| `AlbumDetailView`      | `src/features/app/components/`                | useReviews, AlbumBuzzSection |
 | `ReviewForm`           | `src/features/app/components/`                | useSubmitReview |
+| `AlbumBuzzSection`     | `src/features/app/components/`                | useAlbumBuzz (Neynar cast search) |
 | `CycleStatusBanner`    | `src/features/app/components/`                | Props from parent |
 | `HowItWorks`           | `src/features/app/components/`                | Static content |
 
@@ -214,6 +220,7 @@ No authentication required - Deezer API is public.
 7. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
 8. **User Profiles**: Access via header avatar icon, clickable usernames throughout app
 9. **Profile Stats**: Submissions, wins, votes received, reviews, avg rating given, member since
+10. **Community Buzz**: Real Farcaster cast search replaces hardcoded listener count; uses Neynar `useCastSearch` hook with hybrid mode for best results
 
 ---
 

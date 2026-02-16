@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { Card, CardContent, H2, P, Button, Skeleton } from '@neynar/ui';
 import { useFarcasterUser, ShareButton } from '@/neynar-farcaster-sdk/mini';
-import { useCycle, useCurrentAlbum, useListenerCount } from '@/hooks/use-cycle';
+import { useCycle, useCurrentAlbum } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';
+import { useAlbumBuzz } from '@/hooks/use-album-buzz';
 import { CycleStatusBanner } from './cycle-status-banner';
 import { HowItWorks } from './how-it-works';
 import { AlbumDetailView } from './album-detail-view';
+import { AlbumBuzzSection } from './album-buzz-section';
 
 interface NowPlayingTabProps {
   onViewProfile?: (fid: number) => void;
@@ -20,8 +22,14 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   const { data: user } = useFarcasterUser();
   const { cycle, isLoading: cycleLoading } = useCycle();
   const { album: currentAlbum, isLoading: albumLoading } = useCurrentAlbum(cycle?.id ?? null);
-  const listenersCount = useListenerCount(cycle?.id ?? null);
   const { reviews } = useReviews(currentAlbum?.id ?? null);
+
+  // Farcaster buzz - replaces hardcoded listener count with real cast mentions
+  const { count: buzzCount, isLoading: buzzLoading } = useAlbumBuzz(
+    currentAlbum?.title ?? null,
+    currentAlbum?.artist ?? null,
+    { enabled: !!currentAlbum }
+  );
 
   const phase = cycle?.phase ?? 'voting';
   const countdown = cycle?.countdown ?? { days: 0, hours: 0, minutes: 0 };
@@ -144,8 +152,10 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
             {phase === 'listening' && (
               <div className="flex gap-4 text-sm">
                 <div className="text-center">
-                  <P className="font-bold text-lg text-white">{listenersCount}</P>
-                  <P className="text-xs text-gray-500">listening</P>
+                  <P className="font-bold text-lg text-white">
+                    {buzzLoading ? '...' : buzzCount}
+                  </P>
+                  <P className="text-xs text-gray-500">casts</P>
                 </div>
                 <div className="text-center">
                   <P className="font-bold text-lg text-white">{currentAlbum.totalReviews ?? 0}</P>
@@ -170,6 +180,15 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
         </CardContent>
       </Card>
 
+      {/* Community Buzz - Farcaster casts mentioning this album */}
+      {phase === 'listening' && (
+        <AlbumBuzzSection
+          albumTitle={currentAlbum.title}
+          albumArtist={currentAlbum.artist}
+          onViewProfile={onViewProfile}
+        />
+      )}
+
       {/* Share */}
       <ShareButton
         variant="secondary"
@@ -180,7 +199,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
           albumTitle: currentAlbum.title,
           artist: currentAlbum.artist,
           weekNumber: currentAlbum.weekNumber.toString(),
-          listeners: listenersCount.toString(),
+          casts: buzzCount.toString(),
         }}
       >
         Share
