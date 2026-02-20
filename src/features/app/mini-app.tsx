@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent, H3 } from '@neynar/ui';
-import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
+import { useAuth } from '@/hooks/use-auth';
 import { NowPlayingTab } from './components/now-playing-tab';
 import { VoteTab } from './components/vote-tab';
 import { ArchiveTab } from './components/archive-tab';
 import { ProfileView } from './components/profile-view';
+import { UserButton } from './components/login-modal';
 
 export function MiniApp() {
-  const { data: user } = useFarcasterUser();
+  const { user, isAuthenticated, login } = useAuth();
   const [viewingProfileFid, setViewingProfileFid] = useState<number | null>(null);
 
   // Profile view overlay
@@ -36,21 +37,15 @@ export function MiniApp() {
         <div className="flex items-center justify-between">
           <div className="w-8" /> {/* Spacer for centering */}
           <H3 className="text-white text-center">Playgroup</H3>
-          {user ? (
-            <button
-              onClick={() => setViewingProfileFid(user.fid)}
-              className="w-8 h-8 rounded-full overflow-hidden border border-gray-700 hover:border-gray-500 transition-colors"
-              aria-label="View profile"
-            >
-              <img
-                src={user.pfpUrl || `https://api.dicebear.com/9.x/lorelei/svg?seed=${user.fid}`}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            </button>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700" />
-          )}
+          <UserButton
+            onProfileClick={() => {
+              // For Farcaster users, use their FID
+              // For Privy users, show their own profile via userId
+              if (user?.fid) {
+                setViewingProfileFid(user.fid);
+              }
+            }}
+          />
         </div>
       </header>
 

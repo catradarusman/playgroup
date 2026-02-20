@@ -6,10 +6,12 @@ import { eq, and, desc, sql, avg } from 'drizzle-orm';
 
 /**
  * Submit a review for an album
+ * Supports both FID (legacy) and userId (new)
  */
 export async function submitReview(data: {
   albumId: string;
-  fid: number;
+  fid?: number; // Legacy - Farcaster users
+  userId?: string; // New - unified user ID
   username: string;
   pfp: string | null;
   rating: number;
@@ -28,11 +30,21 @@ export async function submitReview(data: {
   }
 
   // Check if user already reviewed this album
-  const existingReview = await db
-    .select()
-    .from(reviews)
-    .where(and(eq(reviews.albumId, data.albumId), eq(reviews.reviewerFid, data.fid)))
-    .limit(1);
+  let existingReview: any[] = [];
+
+  if (data.userId) {
+    existingReview = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.albumId, data.albumId), eq(reviews.reviewerId, data.userId)))
+      .limit(1);
+  } else if (data.fid) {
+    existingReview = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.albumId, data.albumId), eq(reviews.reviewerFid, data.fid)))
+      .limit(1);
+  }
 
   if (existingReview.length > 0) {
     return { success: false, error: 'You already reviewed this album' };
@@ -43,7 +55,8 @@ export async function submitReview(data: {
     .insert(reviews)
     .values({
       albumId: data.albumId,
-      reviewerFid: data.fid,
+      reviewerFid: data.fid ?? null,
+      reviewerId: data.userId ?? null,
       reviewerUsername: data.username,
       reviewerPfp: data.pfp,
       rating: data.rating,
@@ -84,13 +97,24 @@ export async function getAlbumReviews(albumId: string) {
 
 /**
  * Check if user has reviewed an album
+ * Supports both FID (legacy) and userId (new)
  */
-export async function getUserReview(albumId: string, fid: number) {
-  const result = await db
-    .select()
-    .from(reviews)
-    .where(and(eq(reviews.albumId, albumId), eq(reviews.reviewerFid, fid)))
-    .limit(1);
+export async function getUserReview(albumId: string, fid?: number, userId?: string) {
+  let result: any[] = [];
+
+  if (userId) {
+    result = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.albumId, albumId), eq(reviews.reviewerId, userId)))
+      .limit(1);
+  } else if (fid) {
+    result = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.albumId, albumId), eq(reviews.reviewerFid, fid)))
+      .limit(1);
+  }
 
   return result[0] ?? null;
 }

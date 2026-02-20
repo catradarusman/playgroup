@@ -15,7 +15,7 @@ export interface SubmissionData {
   coverUrl: string;
   spotifyUrl: string;
   votes: number;
-  submitterFid: number;
+  submitterFid: number | null;
   submitter: string;
   daysAgo: number;
   hasVoted: boolean;
@@ -23,8 +23,13 @@ export interface SubmissionData {
 
 /**
  * Hook to get submissions with user's vote status
+ * Supports both FID (legacy) and userId (new)
  */
-export function useSubmissions(cycleId: string | null, userFid: number | null) {
+export function useSubmissions(
+  cycleId: string | null,
+  userFid?: number | null,
+  userId?: string | null
+) {
   const [submissions, setSubmissions] = useState<SubmissionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +42,8 @@ export function useSubmissions(cycleId: string | null, userFid: number | null) {
 
     try {
       // If user is logged in, get vote status too
-      if (userFid) {
-        const data = await getSubmissionsWithUserVotes(cycleId, userFid);
+      if (userId || userFid) {
+        const data = await getSubmissionsWithUserVotes(cycleId, userFid ?? undefined, userId ?? undefined);
         setSubmissions(data);
       } else {
         // Not logged in - just get submissions without vote status
@@ -51,7 +56,7 @@ export function useSubmissions(cycleId: string | null, userFid: number | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [cycleId, userFid]);
+  }, [cycleId, userFid, userId]);
 
   useEffect(() => {
     refresh();
@@ -62,34 +67,39 @@ export function useSubmissions(cycleId: string | null, userFid: number | null) {
 
 /**
  * Hook to get user's submission count
+ * Supports both FID (legacy) and userId (new)
  */
-export function useUserSubmissionCount(fid: number | null, cycleId: string | null) {
+export function useUserSubmissionCount(
+  cycleId: string | null,
+  fid?: number | null,
+  userId?: string | null
+) {
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!fid || !cycleId) {
+    if ((!fid && !userId) || !cycleId) {
       setIsLoading(false);
       return;
     }
 
-    const currentFid = fid;
     const currentCycleId = cycleId;
 
     async function load() {
-      const c = await getUserSubmissionCount(currentFid, currentCycleId);
+      const c = await getUserSubmissionCount(currentCycleId, fid ?? undefined, userId ?? undefined);
       setCount(c);
       setIsLoading(false);
     }
 
     load();
-  }, [fid, cycleId]);
+  }, [fid, userId, cycleId]);
 
   return { count, isLoading };
 }
 
 /**
  * Hook for submitting an album
+ * Supports both FID (legacy) and userId (new)
  */
 export function useSubmitAlbum() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,7 +114,8 @@ export function useSubmitAlbum() {
       spotifyUrl: string;
       tracks?: string[];
       cycleId: string;
-      fid: number;
+      fid?: number;
+      userId?: string;
       username: string;
     }) => {
       setIsSubmitting(true);
@@ -133,17 +144,18 @@ export function useSubmitAlbum() {
 
 /**
  * Hook for voting
+ * Supports both FID (legacy) and userId (new)
  */
 export function useVote() {
   const [isVoting, setIsVoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const vote = useCallback(async (albumId: string, fid: number) => {
+  const vote = useCallback(async (albumId: string, fid?: number, userId?: string) => {
     setIsVoting(true);
     setError(null);
 
     try {
-      const result = await castVote(albumId, fid);
+      const result = await castVote(albumId, fid, userId);
       if (!result.success) {
         setError(result.error || 'Failed to vote');
         return false;

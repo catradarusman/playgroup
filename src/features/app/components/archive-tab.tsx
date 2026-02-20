@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, H3, P, Skeleton } from '@neynar/ui';
 import { ShareButton } from '@/neynar-farcaster-sdk/mini';
+import { useAuth } from '@/hooks/use-auth';
 import { usePastAlbums } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';
 import { AlbumDetailView } from './album-detail-view';
@@ -13,6 +14,9 @@ interface ArchiveTabProps {
 
 export function ArchiveTab({ onViewProfile }: ArchiveTabProps) {
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+
+  // Unified auth - supports both Farcaster and Privy users
+  const { user } = useAuth();
 
   // Get past albums from database
   const { albums, isLoading } = usePastAlbums(new Date().getFullYear());
@@ -63,6 +67,10 @@ export function ArchiveTab({ onViewProfile }: ArchiveTabProps) {
         tracks={selectedAlbum.tracks ?? []}
         onBack={() => setSelectedAlbumId(null)}
         canReview={true}
+        userFid={user?.fid ?? null}
+        userId={user?.id ?? null}
+        username={user?.username}
+        pfpUrl={user?.pfpUrl}
         onViewProfile={onViewProfile}
       />
     );

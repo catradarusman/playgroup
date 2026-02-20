@@ -2,11 +2,11 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { albums, votes, cycles } from '@/db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, or } from 'drizzle-orm';
 
 /**
  * Submit a new album for voting
- * No submission limit - users can submit unlimited albums during voting phase
+ * Supports both FID (legacy) and userId (new Privy users)
  */
 export async function submitAlbum(data: {
   spotifyId: string;
@@ -16,7 +16,8 @@ export async function submitAlbum(data: {
   spotifyUrl: string;
   tracks?: string[];
   cycleId: string;
-  fid: number;
+  fid?: number; // Legacy - Farcaster users
+  userId?: string; // New - unified user ID
   username: string;
 }) {
   // Check for duplicate spotify ID in this cycle
@@ -52,7 +53,8 @@ export async function submitAlbum(data: {
       spotifyUrl: data.spotifyUrl,
       tracks: data.tracks ?? null,
       cycleId: data.cycleId,
-      submittedByFid: data.fid,
+      submittedByFid: data.fid ?? null,
+      submittedByUserId: data.userId ?? null,
       submittedByUsername: data.username,
       status: 'voting',
     })
@@ -63,7 +65,8 @@ export async function submitAlbum(data: {
   // Auto-vote for the submitter's own album
   await db.insert(votes).values({
     albumId: album.id,
-    voterFid: data.fid,
+    voterFid: data.fid ?? null,
+    voterId: data.userId ?? null,
   });
 
   return { success: true, album };
@@ -107,12 +110,23 @@ export async function getSubmissions(cycleId: string) {
 
 /**
  * Get submissions with user's vote status
+ * Supports both FID (legacy) and userId (new)
  */
-export async function getSubmissionsWithUserVotes(cycleId: string, userFid: number) {
+export async function getSubmissionsWithUserVotes(
+  cycleId: string,
+  userFid?: number,
+  userId?: string
+) {
   const submissions = await getSubmissions(cycleId);
 
-  // Get user's votes
-  const userVotes = await db.select().from(votes).where(eq(votes.voterFid, userFid));
+  // Get user's votes - check by either FID or userId
+  let userVotes: { albumId: string }[] = [];
+
+  if (userId) {
+    userVotes = await db.select({ albumId: votes.albumId }).from(votes).where(eq(votes.voterId, userId));
+  } else if (userFid) {
+    userVotes = await db.select({ albumId: votes.albumId }).from(votes).where(eq(votes.voterFid, userFid));
+  }
 
   const votedAlbumIds = new Set(userVotes.map((v) => v.albumId));
 
@@ -124,26 +138,48 @@ export async function getSubmissionsWithUserVotes(cycleId: string, userFid: numb
 
 /**
  * Get user's submission count for current cycle
+ * Supports both FID (legacy) and userId (new)
  */
-export async function getUserSubmissionCount(fid: number, cycleId: string) {
+export async function getUserSubmissionCount(cycleId: string, fid?: number, userId?: string) {
+  let whereClause;
+
+  if (userId) {
+    whereClause = and(eq(albums.cycleId, cycleId), eq(albums.submittedByUserId, userId));
+  } else if (fid) {
+    whereClause = and(eq(albums.cycleId, cycleId), eq(albums.submittedByFid, fid));
+  } else {
+    return 0;
+  }
+
   const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(albums)
-    .where(and(eq(albums.cycleId, cycleId), eq(albums.submittedByFid, fid)));
+    .where(whereClause);
 
   return Number(result[0]?.count ?? 0);
 }
 
 /**
  * Cast a vote for an album
+ * Supports both FID (legacy) and userId (new)
  */
-export async function castVote(albumId: string, fid: number) {
+export async function castVote(albumId: string, fid?: number, userId?: string) {
   // Check if already voted for this album
-  const existingVote = await db
-    .select()
-    .from(votes)
-    .where(and(eq(votes.albumId, albumId), eq(votes.voterFid, fid)))
-    .limit(1);
+  let existingVote: any[] = [];
+
+  if (userId) {
+    existingVote = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.albumId, albumId), eq(votes.voterId, userId)))
+      .limit(1);
+  } else if (fid) {
+    existingVote = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.albumId, albumId), eq(votes.voterFid, fid)))
+      .limit(1);
+  }
 
   if (existingVote.length > 0) {
     return { success: false, error: 'Already voted for this album' };
@@ -159,7 +195,8 @@ export async function castVote(albumId: string, fid: number) {
   // Cast the vote
   await db.insert(votes).values({
     albumId,
-    voterFid: fid,
+    voterFid: fid ?? null,
+    voterId: userId ?? null,
   });
 
   return { success: true };

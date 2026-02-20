@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, H2, H3, H4, P, Button } from '@neynar/ui';
-import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
+import { useAuth } from '@/hooks/use-auth';
 import { useProfile, useUserInfo, ProfileData } from '@/hooks/use-profile';
 
 interface ProfileViewProps {
@@ -11,10 +11,13 @@ interface ProfileViewProps {
 }
 
 export function ProfileView({ fid, onBack, onViewAlbum }: ProfileViewProps) {
-  const { data: currentUser } = useFarcasterUser();
+  // Unified auth - supports both Farcaster and Privy users
+  const { user: currentUser } = useAuth();
   const { profile, isLoading, error } = useProfile(fid);
   const { userInfo } = useUserInfo(fid);
 
+  // Check if this is the current user's profile
+  // Works for Farcaster users (fid match) - Privy-only users won't have profiles in the FID-based system
   const isOwnProfile = currentUser?.fid === fid;
 
   // Get display info - prefer current user data for own profile, otherwise use DB lookup

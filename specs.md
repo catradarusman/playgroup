@@ -112,8 +112,8 @@
 | **Framework**            | Next.js 16 (App Router)            |
 | **UI Components**        | @neynar/ui                         |
 | **Database**             | Neon PostgreSQL + Drizzle ORM      |
-| **Authentication**       | Farcaster (FID-based)              |
-| **Platform**             | Farcaster Mini App (424px viewport)|
+| **Authentication**       | Farcaster + Privy (unified auth)   |
+| **Platform**             | Web App (FC mini + standalone)     |
 
 ---
 
@@ -127,12 +127,12 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2 | ~~User Profile Page~~ | ~~Medium~~ | ✅ Implemented |
 | 3 | ~~Community Buzz (Farcaster)~~ | ~~Low-Medium~~ | ✅ Implemented |
 | 4 | ~~Point Economy (DB)~~ | ~~Medium-High~~ | Superseded by #6 |
-| 5 | Universal Access (Privy) | High | Planned |
+| 5 | ~~Universal Access (Privy)~~ | ~~High~~ | ✅ Implemented |
 | 6 | $PLAY Token On-Chain (AUX-style) | High | Planned |
 
-**Recommended order**: 5 → 6
+**Recommended next**: #6 ($PLAY On-Chain)
 
-**Total estimated time**: ~8-11 hours for remaining features
+**Total estimated time**: ~5-7 hours for remaining feature
 
 ---
 
@@ -154,3 +154,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | **Implemented One-Week Cycles** (26→52 albums/year)  |
 | 2025-02-08 | **Implemented User Profile Page** (header icon, clickable usernames) |
 | 2025-02-08 | **Implemented Community Buzz** (Farcaster cast search, real engagement metrics) |
+| 2025-02-08 | **Implemented Universal Access (Privy)** - Unified auth (FC + email/Google), users table, dual identity support |

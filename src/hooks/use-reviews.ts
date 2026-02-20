@@ -5,7 +5,7 @@ import { getAlbumReviews, submitReview, getUserReview } from '@/db/actions/revie
 
 export interface ReviewData {
   id: string;
-  fid: number;
+  fid: number | null;
   user: string;
   displayName: string;
   pfp: string;
@@ -48,35 +48,40 @@ export function useReviews(albumId: string | null) {
 
 /**
  * Hook to check if user has reviewed an album
+ * Supports both FID (legacy) and userId (new)
  */
-export function useUserReview(albumId: string | null, fid: number | null) {
+export function useUserReview(
+  albumId: string | null,
+  fid?: number | null,
+  userId?: string | null
+) {
   const [hasReviewed, setHasReviewed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!albumId || !fid) {
+    if (!albumId || (!fid && !userId)) {
       setIsLoading(false);
       return;
     }
 
     // Capture non-null values for the async function
     const currentAlbumId = albumId;
-    const currentFid = fid;
 
     async function check() {
-      const review = await getUserReview(currentAlbumId, currentFid);
+      const review = await getUserReview(currentAlbumId, fid ?? undefined, userId ?? undefined);
       setHasReviewed(!!review);
       setIsLoading(false);
     }
 
     check();
-  }, [albumId, fid]);
+  }, [albumId, fid, userId]);
 
   return { hasReviewed, isLoading };
 }
 
 /**
  * Hook for submitting a review
+ * Supports both FID (legacy) and userId (new)
  */
 export function useSubmitReview() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,7 +90,8 @@ export function useSubmitReview() {
   const submit = useCallback(
     async (data: {
       albumId: string;
-      fid: number;
+      fid?: number;
+      userId?: string;
       username: string;
       pfp: string | null;
       rating: number;

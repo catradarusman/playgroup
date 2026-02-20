@@ -14,10 +14,11 @@
 | Submissions & Voting | database | ✅ Complete | Full validation rules           |
 | Reviews              | database | ✅ Complete | Stats auto-update               |
 | Album Metadata       | external | ✅ Complete | Deezer API (no auth needed)     |
-| User Identity        | social   | ✅ Complete | Farcaster FID-based             |
+| User Identity        | social   | ✅ Complete | Unified auth (FC + Privy)       |
 | Share Buttons        | sharing  | ✅ Complete | 3 personalized share types      |
 | User Profiles        | social   | ✅ Complete | Header icon, clickable usernames |
 | Community Buzz       | social   | ✅ Complete | Farcaster cast search for albums |
+| Universal Access     | auth     | ✅ Complete | Privy (email/Google) + Farcaster |
 
 ---
 
@@ -68,7 +69,8 @@ createdAt TIMESTAMP DEFAULT NOW()
 ```sql
 id               UUID PRIMARY KEY
 albumId          UUID NOT NULL
-reviewerFid      INTEGER NOT NULL
+reviewerFid      INTEGER           -- Legacy, nullable for Privy users
+reviewerUserId   UUID              -- Unified user ID
 reviewerUsername TEXT NOT NULL
 reviewerPfp      TEXT
 rating           INTEGER NOT NULL  -- 1-5
@@ -76,6 +78,21 @@ reviewText       TEXT NOT NULL     -- min 50 chars
 favoriteTrack    TEXT
 hasListened      BOOLEAN DEFAULT FALSE
 createdAt        TIMESTAMP DEFAULT NOW()
+```
+
+### `users` Table (Privy Integration)
+```sql
+id              UUID PRIMARY KEY
+fid             INTEGER           -- Farcaster ID (nullable - only FC users)
+privyId         TEXT              -- Privy ID (nullable - only Privy users)
+walletAddress   TEXT              -- Always present (FC or Privy wallet)
+email           TEXT              -- Privy users only
+username        TEXT NOT NULL     -- FC username OR email prefix
+displayName     TEXT NOT NULL     -- Display name
+pfpUrl          TEXT              -- FC PFP OR DiceBear avatar
+authProvider    TEXT NOT NULL     -- 'farcaster' | 'privy'
+createdAt       TIMESTAMP DEFAULT NOW()
+updatedAt       TIMESTAMP DEFAULT NOW()
 ```
 
 ---
@@ -102,14 +119,21 @@ createdAt        TIMESTAMP DEFAULT NOW()
 - `selectWinner(cycleId)` - Auto-select winner by votes
 
 ### Review Actions (`src/db/actions/review-actions.ts`)
-- `submitReview(data)` - Submit review with rating
+- `submitReview(data)` - Submit review with rating (supports fid or userId)
 - `getAlbumReviews(albumId)` - Get all reviews for album
-- `getUserReview(albumId, fid)` - Check if user reviewed
+- `getUserReview(albumId, fid?, userId?)` - Check if user reviewed (dual identity)
 - `updateAlbumStats(albumId)` - Recalculate stats
 
 ### Profile Actions (`src/db/actions/profile-actions.ts`)
 - `getProfileByFid(fid)` - Get complete profile data (submissions, reviews, stats)
 - `getUserInfoByFid(fid)` - Get basic user info (username, pfp) from DB
+
+### User Actions (`src/db/actions/user-actions.ts`)
+- `getOrCreateFarcasterUser(fid, username, pfpUrl, walletAddress)` - Create/get FC user
+- `getOrCreatePrivyUser(privyId, email, walletAddress)` - Create/get Privy user
+- `getUserByFid(fid)` - Lookup by Farcaster ID
+- `getUserByPrivyId(privyId)` - Lookup by Privy ID
+- `getUserByWalletAddress(address)` - Lookup for account linking
 
 ---
 
@@ -129,8 +153,8 @@ createdAt        TIMESTAMP DEFAULT NOW()
 
 ### `src/hooks/use-reviews.ts`
 - `useReviews(albumId)` - Reviews for an album
-- `useUserReview(albumId, fid)` - Check user's review
-- `useSubmitReview()` - Mutation for submitting
+- `useUserReview(albumId, fid?, userId?)` - Check user's review (dual identity)
+- `useSubmitReview()` - Mutation for submitting (supports fid or userId)
 
 ### `src/hooks/use-profile.ts`
 - `useProfile(fid)` - Full profile data (submissions, reviews, stats, memberSince)
@@ -139,6 +163,12 @@ createdAt        TIMESTAMP DEFAULT NOW()
 ### `src/hooks/use-album-buzz.ts`
 - `useAlbumBuzz(title, artist)` - Search Farcaster casts mentioning album
 - Returns: casts[], count, isLoading, hasMore, loadMore()
+
+### `src/hooks/use-auth.ts` (Unified Authentication)
+- `useAuth()` - Unified auth hook for FC + Privy
+- Returns: user, isLoading, isAuthenticated, isFarcasterUser, isPrivyUser, login, logout
+- Priority: Farcaster (if in mini app) → Privy → Not authenticated
+- User object includes: id, fid?, username, displayName, pfpUrl, authProvider
 
 ---
 
@@ -215,12 +245,15 @@ No authentication required - Deezer API is public.
 2. **Deezer vs Spotify**: Using Deezer for metadata (no API key wait), Spotify links for playback
 3. **No Mock Data**: All components use real database, show empty states when no data
 4. **Loading States**: All tabs show skeleton loaders while fetching
-5. **FID-Based Auth**: All user actions use Farcaster FID from `useFarcasterUser()`
-6. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
-7. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
-8. **User Profiles**: Access via header avatar icon, clickable usernames throughout app
-9. **Profile Stats**: Submissions, wins, votes received, reviews, avg rating given, member since
-10. **Community Buzz**: Real Farcaster cast search replaces hardcoded listener count; uses Neynar `useCastSearch` hook with hybrid mode for best results
+5. **Unified Auth**: All user actions use `useAuth()` hook supporting both Farcaster and Privy users
+6. **Dual Identity**: Actions accept both `fid` (legacy) and `userId` (new) for backwards compatibility
+7. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
+8. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
+9. **User Profiles**: Access via header avatar icon, clickable usernames throughout app
+10. **Profile Stats**: Submissions, wins, votes received, reviews, avg rating given, member since
+11. **Community Buzz**: Real Farcaster cast search replaces hardcoded listener count; uses Neynar `useCastSearch` hook with hybrid mode for best results
+12. **Privy Integration**: Lazy-loaded PrivyProvider, DiceBear avatars for non-FC users, email prefix usernames
+13. **Account Linking**: Users with matching wallet addresses are automatically linked (FC + Privy)
 
 ---
 

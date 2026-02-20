@@ -7,7 +7,8 @@ import { useSubmitAlbum } from '@/hooks/use-submissions';
 interface SubmissionFormProps {
   onClose: () => void;
   cycleId: string | null;
-  userFid: number | null;
+  userFid?: number; // Legacy - Farcaster users
+  userId?: string; // New - unified user ID
   username: string;
 }
 
@@ -22,6 +23,7 @@ export function SubmissionForm({
   onClose,
   cycleId,
   userFid,
+  userId,
   username,
 }: SubmissionFormProps) {
   const [step, setStep] = useState<'input' | 'search' | 'loading' | 'preview' | 'success'>('input');
@@ -132,7 +134,7 @@ export function SubmissionForm({
       setError('No active voting cycle - check back when voting opens');
       return;
     }
-    if (!userFid) {
+    if (!userFid && !userId) {
       setError('Please sign in to submit albums');
       return;
     }
@@ -154,6 +156,7 @@ export function SubmissionForm({
       tracks: albumData.tracks,
       cycleId,
       fid: userFid,
+      userId,
       username,
     });
 

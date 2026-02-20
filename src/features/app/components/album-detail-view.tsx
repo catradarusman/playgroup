@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H2, H4, P, Button } from '@neynar/ui';
-import { useFarcasterUser, ShareButton } from '@/neynar-farcaster-sdk/mini';
+import { ShareButton } from '@/neynar-farcaster-sdk/mini';
 import { useUserReview } from '@/hooks/use-reviews';
 import { ReviewForm } from './review-form';
 import { AlbumBuzzSection } from './album-buzz-section';
@@ -39,7 +39,11 @@ interface AlbumDetailViewProps {
   tracks: string[];
   onBack: () => void;
   canReview: boolean;
+  // User info from useAuth
   userFid?: number | null;
+  userId?: string | null;
+  username?: string;
+  pfpUrl?: string | null;
   onViewProfile?: (fid: number) => void;
 }
 
@@ -49,20 +53,24 @@ export function AlbumDetailView({
   tracks,
   onBack,
   canReview,
-  userFid: propUserFid,
+  userFid,
+  userId,
+  username,
+  pfpUrl,
   onViewProfile,
 }: AlbumDetailViewProps) {
   const [showReviewForm, setShowReviewForm] = useState(false);
-
-  // Get user from context if not passed as prop
-  const { data: user } = useFarcasterUser();
-  const userFid = propUserFid ?? user?.fid ?? null;
 
   // Check if album.id is a valid UUID (not a mock ID like "4")
   const isValidUuid = album.id && album.id.length > 10;
 
   // Check if user already reviewed (only query DB if we have a valid UUID)
-  const { hasReviewed } = useUserReview(isValidUuid ? album.id ?? null : null, userFid);
+  // Support both FID (legacy) and userId (new)
+  const { hasReviewed } = useUserReview(
+    isValidUuid ? album.id ?? null : null,
+    userFid,
+    userId
+  );
 
   // Can write review if: in listening phase AND hasn't reviewed yet
   const showWriteReviewButton = canReview && !hasReviewed;
@@ -78,6 +86,10 @@ export function AlbumDetailView({
           albumTitle={album.title}
           tracks={tracks}
           onClose={() => setShowReviewForm(false)}
+          userFid={userFid ?? undefined}
+          userId={userId ?? undefined}
+          username={username ?? 'anon'}
+          pfpUrl={pfpUrl ?? null}
         />
       </div>
     );

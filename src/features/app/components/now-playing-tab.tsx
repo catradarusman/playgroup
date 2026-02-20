@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H2, P, Button, Skeleton } from '@neynar/ui';
-import { useFarcasterUser, ShareButton } from '@/neynar-farcaster-sdk/mini';
+import { ShareButton } from '@/neynar-farcaster-sdk/mini';
+import { useAuth } from '@/hooks/use-auth';
 import { useCycle, useCurrentAlbum } from '@/hooks/use-cycle';
 import { useReviews } from '@/hooks/use-reviews';
 import { useAlbumBuzz } from '@/hooks/use-album-buzz';
@@ -18,8 +19,10 @@ interface NowPlayingTabProps {
 export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   const [view, setView] = useState<'main' | 'detail'>('main');
 
+  // Unified auth - supports both Farcaster and Privy users
+  const { user } = useAuth();
+
   // Real data hooks
-  const { data: user } = useFarcasterUser();
   const { cycle, isLoading: cycleLoading } = useCycle();
   const { album: currentAlbum, isLoading: albumLoading } = useCurrentAlbum(cycle?.id ?? null);
   const { reviews } = useReviews(currentAlbum?.id ?? null);
@@ -57,6 +60,9 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
         onBack={() => setView('main')}
         canReview={phase === 'listening'}
         userFid={user?.fid ?? null}
+        userId={user?.id ?? null}
+        username={user?.username}
+        pfpUrl={user?.pfpUrl}
         onViewProfile={onViewProfile}
       />
     );

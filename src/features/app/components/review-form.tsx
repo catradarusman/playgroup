@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H4, P, Button, Textarea } from '@neynar/ui';
-import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
 import { useSubmitReview } from '@/hooks/use-reviews';
 
 interface ReviewFormProps {
@@ -10,16 +9,29 @@ interface ReviewFormProps {
   albumTitle: string;
   tracks: string[];
   onClose: () => void;
+  // User info passed from parent (from useAuth)
+  userFid?: number;
+  userId?: string;
+  username: string;
+  pfpUrl: string | null;
 }
 
-export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormProps) {
+export function ReviewForm({
+  albumId,
+  albumTitle,
+  tracks,
+  onClose,
+  userFid,
+  userId,
+  username,
+  pfpUrl,
+}: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [favoriteTrack, setFavoriteTrack] = useState('');
   const [hasListened, setHasListened] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const { data: user } = useFarcasterUser();
   const { submit, isSubmitting, error: submitError } = useSubmitReview();
 
   const minChars = 50;
@@ -35,7 +47,7 @@ export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormP
       setLocalError(`Review must be at least ${minChars} characters`);
       return;
     }
-    if (!user?.fid) {
+    if (!userFid && !userId) {
       setLocalError('Please sign in to submit a review');
       return;
     }
@@ -44,9 +56,10 @@ export function ReviewForm({ albumId, albumTitle, tracks, onClose }: ReviewFormP
 
     const result = await submit({
       albumId,
-      fid: user.fid,
-      username: user.username || 'anon',
-      pfp: user.pfpUrl || null,
+      fid: userFid,
+      userId,
+      username: username || 'anon',
+      pfp: pfpUrl || null,
       rating,
       text,
       favoriteTrack: favoriteTrack || null,

@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/db';
+import { db } from '@/neynar-db-sdk/db';
 import { users } from '@/db/schema';
 import { eq, or } from 'drizzle-orm';
 
@@ -33,15 +33,17 @@ export interface UserRecord {
 
 /**
  * Generate a DiceBear avatar URL for non-Farcaster users
+ * (Non-exported helper function - not a server action)
  */
-export function generateAvatarUrl(seed: string): string {
+function generateAvatarUrl(seed: string): string {
   return `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(seed)}`;
 }
 
 /**
  * Derive username from email (alice@gmail.com → alice)
+ * (Non-exported helper function - not a server action)
  */
-export function deriveUsernameFromEmail(email: string): string {
+function deriveUsernameFromEmail(email: string): string {
   const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
   return base || 'user';
 }

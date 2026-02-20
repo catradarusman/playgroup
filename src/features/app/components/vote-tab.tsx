@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
-import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
+import { useAuth } from '@/hooks/use-auth';
 import { useCycle } from '@/hooks/use-cycle';
 import { useSubmissions, useVote } from '@/hooks/use-submissions';
 import { SubmissionForm } from './submission-form';
@@ -14,18 +14,20 @@ interface VoteTabProps {
 export function VoteTab({ onViewProfile }: VoteTabProps) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
-  // Get user from Farcaster context
-  const { data: user } = useFarcasterUser();
-  const userFid = user?.fid ?? null;
+  // Get user from unified auth (Farcaster or Privy)
+  const { user, isAuthenticated, login } = useAuth();
+  const userFid = user?.fid ?? undefined;
+  const userId = user?.id ?? undefined;
   const username = user?.username ?? 'anon';
 
   // Get cycle state
   const { cycle, isLoading: cycleLoading } = useCycle();
 
-  // Get submissions with vote status
+  // Get submissions with vote status - pass both FID and userId
   const { submissions, isLoading: submissionsLoading, refresh: refreshSubmissions } = useSubmissions(
     cycle?.id ?? null,
-    userFid
+    userFid,
+    userId
   );
 
   // Voting hook
@@ -37,12 +39,12 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
   const minutesLeft = cycle?.countdown?.minutes ?? 0;
 
   const canVote = phase === 'voting';
-  const canSubmit = canVote && userFid !== null;
+  const canSubmit = canVote && isAuthenticated;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
-    if (!userFid || isVoting) return;
-    const success = await vote(id, userFid);
+    if (!isAuthenticated || isVoting) return;
+    const success = await vote(id, userFid, userId);
     if (success) {
       refreshSubmissions();
     }
@@ -70,6 +72,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
           }}
           cycleId={cycle?.id ?? null}
           userFid={userFid}
+          userId={userId}
           username={username}
         />
       </div>
@@ -105,9 +108,11 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
           + Submit an Album
         </Button>
       )}
-      {canVote && !userFid && (
+      {canVote && !isAuthenticated && (
         <div className="text-center py-2">
-          <P className="text-sm text-gray-500">Sign in to submit albums</P>
+          <Button variant="outline" onClick={login}>
+            Sign in to submit albums
+          </Button>
         </div>
       )}
 
@@ -157,7 +162,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                       </P>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      {canVote && userFid ? (
+                      {canVote && isAuthenticated ? (
                         <Button
                           variant={album.hasVoted ? 'secondary' : 'default'}
                           size="sm"
@@ -165,6 +170,14 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                           disabled={album.hasVoted || isVoting}
                         >
                           {album.hasVoted ? 'VOTED' : '+'}
+                        </Button>
+                      ) : canVote ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={login}
+                        >
+                          +
                         </Button>
                       ) : (
                         <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-500">
