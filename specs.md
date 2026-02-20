@@ -95,6 +95,7 @@
 | albums   | Submitted and winning albums     |
 | votes    | User votes on albums             |
 | reviews  | User reviews with ratings        |
+| users    | Unified user identity (FC + Privy) |
 
 ### External APIs
 
@@ -102,6 +103,7 @@
 | -------- | -------------------------------- | -------------- |
 | Deezer   | Album metadata & cover art       | None required  |
 | Neynar   | Farcaster cast search            | Built-in SDK   |
+| Privy    | Email/Google authentication      | App ID + Secret |
 
 ---
 
@@ -136,6 +138,19 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 
 ---
 
+## Environment Variables
+
+| Variable                    | Required | Purpose                              |
+| --------------------------- | -------- | ------------------------------------ |
+| `DATABASE_URL`              | Yes      | Neon PostgreSQL connection           |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | Privy app ID for universal login     |
+| `PRIVY_APP_SECRET`          | Yes      | Privy app secret                     |
+| `NEYNAR_API_KEY`            | Yes      | Neynar SDK (auto-configured)         |
+
+**Privy Credentials**: Configured ✅ (`cmlp5mcgl007t0ci8otmh3vtg`)
+
+---
+
 ## Change Log
 
 | Date       | Change                                               |
@@ -155,3 +170,4 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | **Implemented User Profile Page** (header icon, clickable usernames) |
 | 2025-02-08 | **Implemented Community Buzz** (Farcaster cast search, real engagement metrics) |
 | 2025-02-08 | **Implemented Universal Access (Privy)** - Unified auth (FC + email/Google), users table, dual identity support |
+| 2025-02-08 | **Privy Credentials Configured** - Universal login now active in production |

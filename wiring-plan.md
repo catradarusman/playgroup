@@ -1,8 +1,9 @@
 # Playgroup - Wiring Plan
 
-> **Status**: ✅ All Features Complete
+> **Status**: ✅ All Features Complete - Ready to Publish
 > **Last Updated**: 2025-02-08
 > **Cycle Duration**: 1 week (52 albums/year)
+> **Universal Login**: ✅ Privy Configured
 
 ---
 
@@ -274,3 +275,64 @@ No authentication required - Deezer API is public.
 - Listening period: 3 days (Fri-Sun)
 - Total cycle: 7 days
 - Albums per year: 52
+
+---
+
+## Environment Variables
+
+| Variable                    | Required | Status | Purpose                              |
+| --------------------------- | -------- | ------ | ------------------------------------ |
+| `DATABASE_URL`              | Yes      | ✅     | Neon PostgreSQL connection           |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | ✅     | Privy app ID for universal login     |
+| `PRIVY_APP_SECRET`          | Yes      | ✅     | Privy app secret                     |
+| `NEYNAR_API_KEY`            | Yes      | ✅     | Neynar SDK (auto-configured)         |
+
+**All required credentials are configured. App is production-ready.**
+
+---
+
+## Files Reference
+
+### Core Files
+
+| File | Purpose |
+|------|---------|
+| `src/db/schema.ts` | Database schema (5 tables) |
+| `src/db/actions/cycle-actions.ts` | Cycle management |
+| `src/db/actions/submission-actions.ts` | Album submission + voting |
+| `src/db/actions/review-actions.ts` | Review system |
+| `src/db/actions/profile-actions.ts` | User profile queries |
+| `src/db/actions/user-actions.ts` | Unified user identity (FC + Privy) |
+
+### Hooks
+
+| File | Purpose |
+|------|---------|
+| `src/hooks/use-cycle.ts` | Cycle state + countdown |
+| `src/hooks/use-submissions.ts` | Submissions + voting mutations |
+| `src/hooks/use-reviews.ts` | Review queries + mutations |
+| `src/hooks/use-profile.ts` | User profile data |
+| `src/hooks/use-album-buzz.ts` | Farcaster cast search |
+| `src/hooks/use-auth.ts` | Unified auth (FC + Privy) |
+
+### Auth Configuration
+
+| File | Purpose |
+|------|---------|
+| `src/lib/privy.ts` | Privy config (login methods, appearance) |
+| `src/features/app/privy-wrapper.tsx` | PrivyProvider wrapper |
+| `src/features/app/components/login-modal.tsx` | Multi-provider login UI |
+
+### Components
+
+| File | Purpose |
+|------|---------|
+| `src/features/app/mini-app.tsx` | Main app shell |
+| `src/features/app/components/now-playing-tab.tsx` | Current album + buzz |
+| `src/features/app/components/vote-tab.tsx` | Submissions + voting |
+| `src/features/app/components/archive-tab.tsx` | The 52 archive grid |
+| `src/features/app/components/profile-view.tsx` | User profile page |
+| `src/features/app/components/submission-form.tsx` | Album submission |
+| `src/features/app/components/review-form.tsx` | Review submission |
+| `src/features/app/components/album-detail-view.tsx` | Album details + reviews |
+| `src/features/app/components/album-buzz-section.tsx` | Farcaster casts about album |
