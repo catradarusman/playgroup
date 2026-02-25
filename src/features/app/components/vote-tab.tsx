@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useCycle } from '@/hooks/use-cycle';
-import { useSubmissions, useVote } from '@/hooks/use-submissions';
+import { useSubmissions, useVote, useUserSubmissionCount } from '@/hooks/use-submissions';
 import { SubmissionForm } from './submission-form';
 
 interface VoteTabProps {
@@ -33,13 +33,22 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
   // Voting hook
   const { vote, isVoting } = useVote();
 
+  // Submission count (enforces 3-per-cycle limit in UI)
+  const { count: submissionCount } = useUserSubmissionCount(
+    cycle?.id ?? null,
+    userFid,
+    userId
+  );
+
   const phase = cycle?.phase ?? 'voting';
   const daysLeftInPhase = cycle?.countdown?.days ?? 0;
   const hoursLeft = cycle?.countdown?.hours ?? 0;
   const minutesLeft = cycle?.countdown?.minutes ?? 0;
 
   const canVote = phase === 'voting';
-  const canSubmit = canVote && isAuthenticated;
+  const MAX_SUBMISSIONS = 3;
+  const hasReachedLimit = submissionCount >= MAX_SUBMISSIONS;
+  const canSubmit = canVote && isAuthenticated && !hasReachedLimit;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
@@ -103,10 +112,15 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
       </Card>
 
       {/* Submit Button */}
-      {canSubmit && (
+      {canVote && isAuthenticated && !hasReachedLimit && (
         <Button className="w-full" onClick={() => setShowSubmitForm(true)}>
-          + Submit an Album
+          + Submit an Album ({submissionCount}/{MAX_SUBMISSIONS})
         </Button>
+      )}
+      {canVote && isAuthenticated && hasReachedLimit && (
+        <div className="text-center py-2">
+          <P className="text-sm text-gray-500">Limit reached ({MAX_SUBMISSIONS}/{MAX_SUBMISSIONS}) — focus on voting!</P>
+        </div>
       )}
       {canVote && !isAuthenticated && (
         <div className="text-center py-2">

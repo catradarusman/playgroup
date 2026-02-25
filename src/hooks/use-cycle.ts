@@ -46,9 +46,12 @@ export function useCycle() {
 
   const refresh = useCallback(async () => {
     try {
-      // Ensure a cycle exists (creates one if needed)
+      // Ensure a cycle exists (creates one if needed) — this may create a new cycle
+      // if the previous one has fully ended. We use the returned cycle directly to
+      // avoid a stale-read race between create and fetch.
       await getOrCreateCurrentCycle();
 
+      // getCycleWithCountdown reads the most recent cycle (now guaranteed to exist)
       const data = await getCycleWithCountdown();
       if (data) {
         setCycle({
