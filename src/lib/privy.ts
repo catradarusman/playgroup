@@ -21,14 +21,16 @@ export const PRIVY_LOGIN_METHODS = ['email', 'google', 'farcaster'] as const;
  */
 export const PRIVY_APPEARANCE = {
   theme: 'dark' as const,
-  accentColor: '#DC2626', // Red accent from theme
+  accentColor: '#DC2626' as `#${string}`, // Red accent from theme
   logo: '/app-logo.png',
 };
 
 /**
  * Privy embedded wallet config
+ * Note: createOnLogin is nested under 'ethereum' in Privy v3+
  */
 export const PRIVY_WALLET_CONFIG = {
-  createOnLogin: 'users-without-wallets' as const,
-  noPromptOnSignature: true,
+  ethereum: {
+    createOnLogin: 'users-without-wallets' as const,
+  },
 };

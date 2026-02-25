@@ -91,13 +91,15 @@ export function useAuth(): UseAuthResult {
     try {
       // Priority 1: Farcaster user (if in mini app context)
       if (farcasterUser?.fid) {
-        const walletAddress = farcasterUser.custody_address || wallets?.[0]?.address;
+        // Context.UserContext uses camelCase props (displayName, pfpUrl)
+        // No custody_address on UserContext - use Privy wallet if available
+        const walletAddress = wallets?.[0]?.address;
 
         const dbUser = await getOrCreateFarcasterUser({
           fid: farcasterUser.fid,
           username: farcasterUser.username,
-          displayName: farcasterUser.display_name || farcasterUser.username,
-          pfpUrl: farcasterUser.pfp_url,
+          displayName: farcasterUser.displayName || farcasterUser.username,
+          pfpUrl: farcasterUser.pfpUrl,
           walletAddress,
         });
 

@@ -24,9 +24,10 @@ export function ProfileView({ fid, onBack, onViewAlbum }: ProfileViewProps) {
   const displayName = isOwnProfile
     ? currentUser?.username
     : userInfo?.username ?? `User ${fid}`;
-  const displayPfp = isOwnProfile
-    ? currentUser?.pfpUrl
-    : userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`;
+  // Ensure displayPfp is always a string (never null/undefined) for <img src>
+  const displayPfp: string = isOwnProfile
+    ? (currentUser?.pfpUrl ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`)
+    : (userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`);
 
   if (isLoading) {
     return (

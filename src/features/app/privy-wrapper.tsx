@@ -15,7 +15,7 @@ export default function PrivyWrapper({ children }: { children: ReactNode }) {
       appId={PRIVY_APP_ID}
       config={{
         appearance: PRIVY_APPEARANCE,
-        loginMethods: PRIVY_LOGIN_METHODS as unknown as string[],
+        loginMethods: [...PRIVY_LOGIN_METHODS],
         embeddedWallets: PRIVY_WALLET_CONFIG,
         // Support Base chain for future $PLAY token
         defaultChain: {

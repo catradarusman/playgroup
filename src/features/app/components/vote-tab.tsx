@@ -152,7 +152,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onViewProfile?.(album.submitterFid);
+                            if (album.submitterFid != null) onViewProfile?.(album.submitterFid);
                           }}
                           className="text-gray-400 hover:text-white transition-colors"
                         >

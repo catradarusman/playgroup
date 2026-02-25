@@ -23,7 +23,7 @@ interface AlbumForDisplay {
 
 interface ReviewForDisplay {
   id: string | number;
-  fid?: number;
+  fid?: number | null;
   user: string;
   displayName?: string;
   pfp: string;

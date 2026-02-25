@@ -31,7 +31,7 @@ export interface AlbumData {
   mostLovedTrack: string | null;
   mostLovedTrackVotes: number | null;
   weekNumber: number;
-  submittedByFid: number;
+  submittedByFid: number | null;
   submittedByUsername: string;
   tracks: string[] | null;
 }
