@@ -10,7 +10,7 @@ import { ProfileView } from './components/profile-view';
 import { UserButton } from './components/login-modal';
 
 export function MiniApp() {
-  const { user, isAuthenticated, login } = useAuth();
+  const { user } = useAuth();
   const [viewingProfileFid, setViewingProfileFid] = useState<number | null>(null);
 
   // Profile view overlay

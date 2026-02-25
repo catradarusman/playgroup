@@ -135,9 +135,7 @@ export async function getCycleAlbum(cycleId: string) {
 /**
  * Get past winning albums for archive
  */
-export async function getPastAlbums(year?: number) {
-  const targetYear = year ?? new Date().getFullYear();
-
+export async function getPastAlbums(_year?: number) {
   // Get all selected albums with their cycle info
   const result = await db
     .select({

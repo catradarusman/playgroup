@@ -2,7 +2,7 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { albums, votes, reviews } from '@/db/schema';
-import { eq, and, desc, sql, min, avg } from 'drizzle-orm';
+import { eq, desc, sql, min } from 'drizzle-orm';
 
 /**
  * Get complete profile data for a user by FID

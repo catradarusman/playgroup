@@ -6,7 +6,6 @@ import { useFarcasterUser } from '@/neynar-farcaster-sdk/mini';
 import {
   getOrCreateFarcasterUser,
   getOrCreatePrivyUser,
-  type UserRecord,
 } from '@/db/actions/user-actions';
 
 export interface UnifiedUser {
@@ -97,8 +96,8 @@ export function useAuth(): UseAuthResult {
 
         const dbUser = await getOrCreateFarcasterUser({
           fid: farcasterUser.fid,
-          username: farcasterUser.username,
-          displayName: farcasterUser.displayName || farcasterUser.username,
+          username: farcasterUser.username ?? `user_${farcasterUser.fid}`,
+          displayName: farcasterUser.displayName || farcasterUser.username || `User ${farcasterUser.fid}`,
           pfpUrl: farcasterUser.pfpUrl,
           walletAddress,
         });
@@ -158,7 +157,7 @@ export function useAuth(): UseAuthResult {
           privyId: privyUser.id,
           email,
           walletAddress,
-          displayName: privyUser.google?.name,
+          displayName: privyUser.google?.name ?? undefined,
         });
 
         setUnifiedUser({

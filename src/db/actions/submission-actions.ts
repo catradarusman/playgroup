@@ -2,7 +2,7 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { albums, votes, cycles } from '@/db/schema';
-import { eq, and, desc, sql, or } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 
 /**
  * Submit a new album for voting

@@ -88,7 +88,7 @@ export function ReviewForm({
               onChange={(e) => setHasListened(e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-sm text-white">I've listened to the full album</span>
+            <span className="text-sm text-white">I&apos;ve listened to the full album</span>
           </label>
 
           {/* Rating */}

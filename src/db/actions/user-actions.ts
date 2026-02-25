@@ -2,7 +2,7 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { users } from '@/db/schema';
-import { eq, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export type AuthProvider = 'farcaster' | 'privy';
 
