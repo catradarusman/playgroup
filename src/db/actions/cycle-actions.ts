@@ -233,31 +233,40 @@ export async function getListenerCount(_cycleId: string): Promise<number> {
 
 /**
  * Get or create a current cycle - ensures there's always an active cycle
- * Creates Week 1 in voting phase if no cycle exists
+ * Creates a new voting cycle if:
+ * - No cycle exists at all
+ * - The most recent cycle has fully ended (past endDate)
  */
 export async function getOrCreateCurrentCycle() {
   const existing = await getCurrentCycle();
-  if (existing) return existing;
-
-  // No cycle exists - create the first one!
   const now = new Date();
+
+  // If a cycle exists and hasn't fully ended yet, keep using it
+  if (existing && now <= existing.endDate) {
+    return existing;
+  }
+
+  // Either no cycle exists, or the last cycle is fully over — start a fresh one
   const year = now.getFullYear();
 
-  // Calculate cycle dates: 1 week total
-  // Voting: Mon-Thu (4 days), Listening: Fri-Sun (3 days)
+  // Determine week number: increment from last cycle, or start at 1
+  const lastWeek = existing?.weekNumber ?? 0;
+  const nextWeek = lastWeek + 1;
+
+  // New cycle starts today, voting open for 4 days
   const startDate = new Date(now);
   startDate.setHours(0, 0, 0, 0);
 
   const votingEndsAt = new Date(startDate);
-  votingEndsAt.setDate(votingEndsAt.getDate() + 4); // 4 days for voting (Mon-Thu)
-  votingEndsAt.setHours(22, 0, 0, 0); // 10pm
+  votingEndsAt.setDate(votingEndsAt.getDate() + 4); // 4 days of voting
+  votingEndsAt.setHours(22, 0, 0, 0); // closes at 10pm
 
   const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + 7); // 1 week total
+  endDate.setDate(endDate.getDate() + 7); // full week
   endDate.setHours(23, 59, 59, 999);
 
   const newCycle = await createCycle({
-    weekNumber: 1,
+    weekNumber: nextWeek,
     year,
     phase: 'voting',
     startDate,
