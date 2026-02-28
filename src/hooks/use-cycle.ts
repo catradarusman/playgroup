@@ -22,6 +22,7 @@ export interface CycleData {
 
 export interface AlbumData {
   id: string;
+  spotifyId: string;
   title: string;
   artist: string;
   coverUrl: string;
@@ -34,6 +35,7 @@ export interface AlbumData {
   submittedByFid: number | null;
   submittedByUsername: string;
   tracks: string[] | null;
+  genres: string[] | null;
 }
 
 /**
@@ -106,6 +108,7 @@ export function useCurrentAlbum(cycleId: string | null) {
         if (data) {
           setAlbum({
             id: data.id,
+            spotifyId: data.spotifyId,
             title: data.title,
             artist: data.artist,
             coverUrl: data.coverUrl,
@@ -118,6 +121,7 @@ export function useCurrentAlbum(cycleId: string | null) {
             submittedByFid: data.submittedByFid,
             submittedByUsername: data.submittedByUsername,
             tracks: data.tracks as string[] | null,
+            genres: (data.genres as string[] | null) ?? null,
           });
         }
       } catch (e) {
@@ -148,6 +152,7 @@ export function usePastAlbums(year?: number) {
         setAlbums(
           data.map((a) => ({
             id: a.id,
+            spotifyId: a.spotifyId,
             title: a.title,
             artist: a.artist,
             coverUrl: a.coverUrl,
@@ -160,6 +165,7 @@ export function usePastAlbums(year?: number) {
             submittedByFid: a.submittedByFid,
             submittedByUsername: a.submittedByUsername,
             tracks: null,
+            genres: (a.genres as string[] | null) ?? null,
           }))
         );
       } catch (e) {

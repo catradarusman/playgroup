@@ -16,6 +16,7 @@ export async function submitAlbum(data: {
   coverUrl: string;
   spotifyUrl: string;
   tracks?: string[];
+  genres?: string[];
   cycleId: string;
   fid?: number; // Legacy - Farcaster users
   userId?: string; // New - unified user ID
@@ -55,6 +56,7 @@ export async function submitAlbum(data: {
           coverUrl: data.coverUrl,
           spotifyUrl: data.spotifyUrl,
           tracks: data.tracks ?? null,
+          genres: data.genres ?? null,
           cycleId: data.cycleId,
           submittedByFid: data.fid ?? null,
           submittedByUserId: data.userId ?? null,
@@ -92,10 +94,12 @@ export async function getSubmissions(cycleId: string) {
   const rows = await db
     .select({
       id: albums.id,
+      spotifyId: albums.spotifyId,
       title: albums.title,
       artist: albums.artist,
       coverUrl: albums.coverUrl,
       spotifyUrl: albums.spotifyUrl,
+      genres: albums.genres,
       submittedByFid: albums.submittedByFid,
       submittedByUsername: albums.submittedByUsername,
       createdAt: albums.createdAt,
@@ -110,10 +114,12 @@ export async function getSubmissions(cycleId: string) {
   return rows
     .map((row) => ({
       id: row.id,
+      spotifyId: row.spotifyId,
       title: row.title,
       artist: row.artist,
       coverUrl: row.coverUrl,
       spotifyUrl: row.spotifyUrl,
+      genres: (row.genres as string[] | null) ?? [],
       votes: row.votes,
       submitterFid: row.submittedByFid,
       submitter: row.submittedByUsername,

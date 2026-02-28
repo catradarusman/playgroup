@@ -14,7 +14,7 @@ interface SpotifyToken {
 interface SpotifyAlbum {
   id: string;
   name: string;
-  artists: { name: string }[];
+  artists: { id: string; name: string }[];
   images: { url: string; width: number; height: number }[];
   external_urls: { spotify: string };
   tracks: {
@@ -22,6 +22,16 @@ interface SpotifyAlbum {
   };
   release_date: string;
   total_tracks: number;
+}
+
+interface SpotifyArtist {
+  genres: string[];
+}
+
+interface SpotifySearchResult {
+  albums: {
+    items: SpotifyAlbum[];
+  };
 }
 
 export interface AlbumMetadata {
@@ -33,6 +43,7 @@ export interface AlbumMetadata {
   tracks: string[];
   releaseDate: string;
   totalTracks: number;
+  genres: string[];
 }
 
 // Cache token in memory (server-side)
@@ -103,7 +114,51 @@ function extractSpotifyAlbumId(url: string): string | null {
 }
 
 /**
- * Fetch album metadata from Spotify API
+ * Fetch genre tags for the primary artist of an album
+ */
+async function fetchArtistGenres(artistId: string, token: string): Promise<string[]> {
+  try {
+    const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    const artist: SpotifyArtist = await response.json();
+    return artist.genres.slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Build AlbumMetadata from a SpotifyAlbum object (shared helper)
+ */
+async function buildAlbumMetadata(album: SpotifyAlbum, token: string): Promise<AlbumMetadata> {
+  const coverUrl = album.images[0]?.url || '';
+  const tracks = album.tracks.items
+    .sort((a, b) => a.track_number - b.track_number)
+    .map((track) => track.name);
+  const artist = album.artists.map((a) => a.name).join(', ');
+
+  // Fetch genres from primary artist (more reliable than album genres)
+  const genres = album.artists[0]?.id
+    ? await fetchArtistGenres(album.artists[0].id, token)
+    : [];
+
+  return {
+    spotifyId: album.id,
+    title: album.name,
+    artist,
+    coverUrl,
+    spotifyUrl: album.external_urls.spotify,
+    tracks,
+    releaseDate: album.release_date,
+    totalTracks: album.total_tracks,
+    genres,
+  };
+}
+
+/**
+ * Fetch album metadata from Spotify API by URL
  */
 export async function fetchAlbumMetadata(spotifyUrl: string): Promise<AlbumMetadata | null> {
   const albumId = extractSpotifyAlbumId(spotifyUrl);
@@ -123,36 +178,58 @@ export async function fetchAlbumMetadata(spotifyUrl: string): Promise<AlbumMetad
 
     if (!response.ok) {
       if (response.status === 404) {
-        return null; // Album not found
+        return null;
       }
       throw new Error(`Spotify API error: ${response.status}`);
     }
 
     const album: SpotifyAlbum = await response.json();
-
-    // Get the best quality image (first is usually largest)
-    const coverUrl = album.images[0]?.url || '';
-
-    // Extract track names
-    const tracks = album.tracks.items
-      .sort((a, b) => a.track_number - b.track_number)
-      .map((track) => track.name);
-
-    // Combine all artists
-    const artist = album.artists.map((a) => a.name).join(', ');
-
-    return {
-      spotifyId: album.id,
-      title: album.name,
-      artist,
-      coverUrl,
-      spotifyUrl: album.external_urls.spotify,
-      tracks,
-      releaseDate: album.release_date,
-      totalTracks: album.total_tracks,
-    };
+    return buildAlbumMetadata(album, token);
   } catch (error) {
     console.error('Error fetching album from Spotify:', error);
+    return null;
+  }
+}
+
+/**
+ * Search for an album by query string (artist + album name)
+ * Returns the top match with full metadata including genres
+ */
+export async function searchAlbum(query: string): Promise<AlbumMetadata | null> {
+  try {
+    const token = await getAccessToken();
+
+    const searchResponse = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=1`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!searchResponse.ok) {
+      throw new Error(`Spotify search error: ${searchResponse.status}`);
+    }
+
+    const searchData: SpotifySearchResult = await searchResponse.json();
+    const firstResult = searchData.albums?.items?.[0];
+
+    if (!firstResult) {
+      return null;
+    }
+
+    // Fetch full album details (search results don't include tracks)
+    const albumResponse = await fetch(`https://api.spotify.com/v1/albums/${firstResult.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!albumResponse.ok) {
+      return null;
+    }
+
+    const album: SpotifyAlbum = await albumResponse.json();
+    return buildAlbumMetadata(album, token);
+  } catch (error) {
+    console.error('Error searching album on Spotify:', error);
     return null;
   }
 }

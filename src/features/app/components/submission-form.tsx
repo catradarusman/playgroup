@@ -13,10 +13,26 @@ interface SubmissionFormProps {
 }
 
 interface AlbumData {
+  spotifyId: string;
   title: string;
   artist: string;
   coverUrl: string;
+  spotifyUrl: string;
   tracks: string[];
+  genres: string[];
+}
+
+function GenrePills({ genres }: { genres: string[] }) {
+  if (!genres.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {genres.slice(0, 3).map((g) => (
+        <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+          {g}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function SubmissionForm({
@@ -26,47 +42,20 @@ export function SubmissionForm({
   userId,
   username,
 }: SubmissionFormProps) {
-  const [step, setStep] = useState<'input' | 'search' | 'loading' | 'preview' | 'success'>('input');
-  const [spotifyUrl, setSpotifyUrl] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [step, setStep] = useState<'input' | 'loading' | 'preview' | 'success'>('input');
+  const [query, setQuery] = useState('');
   const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { submit, isSubmitting, error: submitError } = useSubmitAlbum();
 
-  // Extract Spotify album ID from URL
-  const extractSpotifyId = (url: string): string | null => {
-    const patterns = [
-      /spotify\.com\/album\/([a-zA-Z0-9]+)/,
-      /spotify:album:([a-zA-Z0-9]+)/,
-    ];
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) return match[1];
-    }
-    return null;
-  };
+  const isSpotifyUrl = (input: string) =>
+    input.includes('spotify.com/album') || input.includes('spotify:album:');
 
-  const handlePaste = () => {
-    // Validate Spotify link
-    if (!spotifyUrl.includes('spotify.com/album') && !spotifyUrl.includes('spotify:album:')) {
-      setError('Please paste a valid Spotify album link');
-      return;
-    }
-
-    const spotifyId = extractSpotifyId(spotifyUrl);
-    if (!spotifyId) {
-      setError('Invalid Spotify album link');
-      return;
-    }
-
-    setError(null);
-    setStep('search');
-  };
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setError('Please enter the album name');
+  const handleFind = async () => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setError('Please enter a Spotify link or album name');
       return;
     }
 
@@ -74,64 +63,59 @@ export function SubmissionForm({
     setStep('loading');
 
     try {
-      const response = await fetch(`/api/deezer/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      let data: AlbumData | null = null;
 
-      if (response.ok) {
-        const data = await response.json();
-        setAlbumData({
-          title: data.title,
-          artist: data.artist,
-          coverUrl: data.coverUrl,
-          tracks: data.tracks || [],
-        });
-        setStep('preview');
-      } else {
-        // Not found on Deezer - use manual entry
-        const parts = searchQuery.trim().split(' - ');
-        if (parts.length >= 2) {
-          setAlbumData({
-            title: parts.slice(1).join(' - '),
-            artist: parts[0],
-            coverUrl: '',
-            tracks: [],
-          });
+      if (isSpotifyUrl(trimmed)) {
+        const res = await fetch(`/api/spotify/album?url=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          data = await res.json();
+        } else if (res.status === 404) {
+          setError('Album not found on Spotify — check the link and try again');
+          setStep('input');
+          return;
         } else {
-          setAlbumData({
-            title: searchQuery.trim(),
-            artist: 'Unknown Artist',
-            coverUrl: '',
-            tracks: [],
-          });
+          setError('Could not fetch album — check the link and try again');
+          setStep('input');
+          return;
         }
+      } else {
+        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          data = await res.json();
+        } else if (res.status === 404) {
+          setError('No album found — try a different search');
+          setStep('input');
+          return;
+        } else {
+          setError('Search failed — try again');
+          setStep('input');
+          return;
+        }
+      }
+
+      if (data) {
+        setAlbumData(data);
         setStep('preview');
       }
-    } catch (err) {
-      console.error('Error searching:', err);
-      // Use manual entry on error
-      setAlbumData({
-        title: searchQuery.trim(),
-        artist: 'Unknown Artist',
-        coverUrl: '',
-        tracks: [],
-      });
-      setStep('preview');
+    } catch {
+      setError('Something went wrong — try again');
+      setStep('input');
     }
   };
 
-  // Auto-search when user presses Enter
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      handleSearch();
+    if (e.key === 'Enter' && query.trim()) {
+      handleFind();
     }
   };
 
   const handleSubmit = async () => {
     if (!albumData) {
-      setError('Album data not found - try searching again');
+      setError('Album data not found — try searching again');
       return;
     }
     if (!cycleId) {
-      setError('No active voting cycle - check back when voting opens');
+      setError('No active voting cycle — check back when voting opens');
       return;
     }
     if (!userFid && !userId) {
@@ -139,21 +123,16 @@ export function SubmissionForm({
       return;
     }
 
-    const spotifyId = extractSpotifyId(spotifyUrl);
-    if (!spotifyId) {
-      setError('Invalid Spotify link');
-      return;
-    }
-
     setError(null);
 
     const result = await submit({
-      spotifyId,
+      spotifyId: albumData.spotifyId,
       title: albumData.title,
       artist: albumData.artist,
       coverUrl: albumData.coverUrl,
-      spotifyUrl,
+      spotifyUrl: albumData.spotifyUrl,
       tracks: albumData.tracks,
+      genres: albumData.genres,
       cycleId,
       fid: userFid,
       userId,
@@ -221,15 +200,14 @@ export function SubmissionForm({
                 className="w-20 h-20 rounded-lg flex-shrink-0 object-cover shadow-lg"
               />
             ) : (
-              <div
-                className="w-20 h-20 rounded-lg flex-shrink-0 shadow-lg bg-gray-800 border border-gray-700"
-              />
+              <div className="w-20 h-20 rounded-lg flex-shrink-0 shadow-lg bg-gray-800 border border-gray-700" />
             )}
             <div>
               <P className="font-bold text-white">{albumData.title}</P>
               <P className="text-gray-400">{albumData.artist}</P>
+              <GenrePills genres={albumData.genres} />
               {albumData.tracks.length > 0 && (
-                <P className="text-xs text-gray-600">{albumData.tracks.length} tracks</P>
+                <P className="text-xs text-gray-600 mt-1">{albumData.tracks.length} tracks</P>
               )}
             </div>
           </div>
@@ -240,42 +218,12 @@ export function SubmissionForm({
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Album'}
             </Button>
-            <Button variant="outline" onClick={() => { setSearchQuery(''); setStep('search'); }} disabled={isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={() => { setQuery(''); setAlbumData(null); setStep('input'); }}
+              disabled={isSubmitting}
+            >
               Wrong album?
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (step === 'search') {
-    return (
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <H4>What album is this?</H4>
-          <P className="text-sm text-gray-400">Type the album name to find cover art & track list</P>
-
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="e.g., Pink Floyd Dark Side of the Moon"
-            autoFocus
-          />
-
-          {error && <P className="text-red-500 text-sm">{error}</P>}
-
-          <P className="text-xs text-gray-600">
-            Tip: Include artist name for better results
-          </P>
-
-          <div className="flex gap-2">
-            <Button onClick={handleSearch} disabled={!searchQuery.trim()}>
-              Find Album
-            </Button>
-            <Button variant="outline" onClick={() => setStep('input')}>
-              ← Back
             </Button>
           </div>
         </CardContent>
@@ -289,24 +237,26 @@ export function SubmissionForm({
         <H4>Submit Album</H4>
         <div className="space-y-3 mt-3">
           <Input
-            value={spotifyUrl}
-            onChange={(e) => setSpotifyUrl(e.target.value)}
-            placeholder="Paste Spotify album link"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Paste Spotify link or search artist + album"
             autoFocus
           />
 
           {error && <P className="text-red-500 text-sm">{error}</P>}
 
-          <div className="text-xs text-gray-500 space-y-1">
-            <P className="font-medium">How to find:</P>
-            <P>1. Open Spotify → Find album</P>
-            <P>2. Tap ••• → Share → Copy Link</P>
-            <P>3. Paste above</P>
+          <div className="text-xs text-gray-500 space-y-0.5">
+            <P>Drop a Spotify album link, or type artist + album name</P>
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handlePaste}>Next</Button>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleFind} disabled={!query.trim()}>
+              Find Album
+            </Button>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
           </div>
         </div>
       </CardContent>

@@ -14,6 +14,19 @@ interface NowPlayingTabProps {
   onViewProfile?: (fid: number) => void;
 }
 
+function GenrePills({ genres }: { genres: string[] }) {
+  if (!genres.length) return null;
+  return (
+    <div className="flex flex-wrap justify-center gap-1 mt-1">
+      {genres.slice(0, 3).map((g) => (
+        <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+          {g}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   const [view, setView] = useState<'main' | 'detail'>('main');
 
@@ -35,6 +48,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
       <AlbumDetailView
         album={{
           id: currentAlbum.id,
+          spotifyId: currentAlbum.spotifyId,
           title: currentAlbum.title,
           artist: currentAlbum.artist,
           coverUrl: currentAlbum.coverUrl,
@@ -45,6 +59,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
           mostLovedTrackVotes: currentAlbum.mostLovedTrackVotes,
           weekNumber: currentAlbum.weekNumber,
           submittedBy: currentAlbum.submittedByUsername,
+          genres: currentAlbum.genres,
         }}
         reviews={reviews}
         tracks={currentAlbum.tracks ?? []}
@@ -135,6 +150,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
             <div>
               <H2>{currentAlbum.title}</H2>
               <P className="text-gray-400">{currentAlbum.artist}</P>
+              <GenrePills genres={currentAlbum.genres ?? []} />
               <P className="text-xs text-gray-600 mt-1">
                 submitted by{' '}
                 <button
@@ -167,6 +183,20 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
                 See Reviews
               </Button>
             </div>
+
+            {/* Spotify embed player — shown during listening phase */}
+            {phase === 'listening' && currentAlbum.spotifyId && (
+              <div className="w-full">
+                <iframe
+                  src={`https://open.spotify.com/embed/album/${currentAlbum.spotifyId}?utm_source=generator&theme=0`}
+                  width="100%"
+                  height="152"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  style={{ borderRadius: '12px', border: 'none' }}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

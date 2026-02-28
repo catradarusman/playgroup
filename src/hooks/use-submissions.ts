@@ -10,10 +10,12 @@ import {
 
 export interface SubmissionData {
   id: string;
+  spotifyId: string;
   title: string;
   artist: string;
   coverUrl: string;
   spotifyUrl: string;
+  genres: string[];
   votes: number;
   submitterFid: number | null;
   submitter: string;
@@ -113,6 +115,7 @@ export function useSubmitAlbum() {
       coverUrl: string;
       spotifyUrl: string;
       tracks?: string[];
+      genres?: string[];
       cycleId: string;
       fid?: number;
       userId?: string;

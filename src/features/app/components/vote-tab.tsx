@@ -11,8 +11,22 @@ interface VoteTabProps {
   onViewProfile?: (fid: number) => void;
 }
 
+function GenrePills({ genres }: { genres: string[] }) {
+  if (!genres.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-0.5">
+      {genres.slice(0, 2).map((g) => (
+        <span key={g} className="text-xs px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">
+          {g}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function VoteTab({ onViewProfile }: VoteTabProps) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
 
   // Get user from unified auth (Farcaster or Privy)
   const { user, isAuthenticated, login } = useAuth();
@@ -48,7 +62,6 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
   const canVote = phase === 'voting';
   const MAX_SUBMISSIONS = 3;
   const hasReachedLimit = submissionCount >= MAX_SUBMISSIONS;
-  const canSubmit = canVote && isAuthenticated && !hasReachedLimit;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
@@ -57,6 +70,10 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
     if (success) {
       refreshSubmissions();
     }
+  };
+
+  const togglePreview = (albumId: string) => {
+    setExpandedPreview((prev) => (prev === albumId ? null : albumId));
   };
 
   // Loading state
@@ -162,18 +179,29 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                     <div className="flex-1 min-w-0">
                       <P className="font-medium text-sm text-white truncate">{album.title}</P>
                       <P className="text-xs text-gray-400">{album.artist}</P>
-                      <P className="text-xs text-gray-600">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (album.submitterFid != null) onViewProfile?.(album.submitterFid);
-                          }}
-                          className="text-gray-400 hover:text-white transition-colors"
-                        >
-                          @{album.submitter}
-                        </button>
-                        {' '}• {album.daysAgo}d ago
-                      </P>
+                      <GenrePills genres={album.genres} />
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <P className="text-xs text-gray-600">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (album.submitterFid != null) onViewProfile?.(album.submitterFid);
+                            }}
+                            className="text-gray-400 hover:text-white transition-colors"
+                          >
+                            @{album.submitter}
+                          </button>
+                          {' '}• {album.daysAgo}d ago
+                        </P>
+                        {album.spotifyId && (
+                          <button
+                            onClick={() => togglePreview(album.id)}
+                            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+                          >
+                            {expandedPreview === album.id ? '▼ hide' : '▶ preview'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       {canVote && isAuthenticated ? (
@@ -201,6 +229,20 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                       <span className="text-sm font-medium text-white">{album.votes}</span>
                     </div>
                   </div>
+
+                  {/* Spotify embed preview */}
+                  {expandedPreview === album.id && album.spotifyId && (
+                    <div className="mt-3">
+                      <iframe
+                        src={`https://open.spotify.com/embed/album/${album.spotifyId}?utm_source=generator&theme=0`}
+                        width="100%"
+                        height="152"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                        style={{ borderRadius: '12px', border: 'none' }}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

@@ -144,6 +144,7 @@ export async function getPastAlbums(_year?: number) {
   const result = await db
     .select({
       id: albums.id,
+      spotifyId: albums.spotifyId,
       title: albums.title,
       artist: albums.artist,
       coverUrl: albums.coverUrl,
@@ -155,6 +156,7 @@ export async function getPastAlbums(_year?: number) {
       mostLovedTrackVotes: albums.mostLovedTrackVotes,
       submittedByFid: albums.submittedByFid,
       submittedByUsername: albums.submittedByUsername,
+      genres: albums.genres,
       createdAt: albums.createdAt,
       weekNumber: cycles.weekNumber,
     })

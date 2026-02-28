@@ -8,6 +8,7 @@ import { ReviewForm } from './review-form';
 
 interface AlbumForDisplay {
   id?: string;
+  spotifyId?: string;
   title: string;
   artist: string;
   coverUrl: string;
@@ -18,6 +19,7 @@ interface AlbumForDisplay {
   mostLovedTrackVotes: number | null;
   weekNumber: number;
   submittedBy: string;
+  genres?: string[] | null;
 }
 
 interface ReviewForDisplay {
@@ -44,6 +46,19 @@ interface AlbumDetailViewProps {
   username?: string;
   pfpUrl?: string | null;
   onViewProfile?: (fid: number) => void;
+}
+
+function GenrePills({ genres }: { genres: string[] }) {
+  if (!genres.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {genres.slice(0, 3).map((g) => (
+        <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+          {g}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function AlbumDetailView({
@@ -118,6 +133,7 @@ export function AlbumDetailView({
             <div className="flex-1">
               <H2>{album.title}</H2>
               <P className="text-gray-400">{album.artist}</P>
+              <GenrePills genres={album.genres ?? []} />
               <P className="text-xs text-gray-500 mt-1">
                 Submitted by @{album.submittedBy} • Week {album.weekNumber}
               </P>
@@ -131,6 +147,20 @@ export function AlbumDetailView({
               </Button>
             </div>
           </div>
+
+          {/* Spotify embed player */}
+          {album.spotifyId && (
+            <div className="mt-4">
+              <iframe
+                src={`https://open.spotify.com/embed/album/${album.spotifyId}?utm_source=generator&theme=0`}
+                width="100%"
+                height="152"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                style={{ borderRadius: '12px', border: 'none' }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchAlbum } from '@/lib/deezer';
+import { searchAlbum, isSpotifyConfigured } from '@/lib/spotify';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get('q');
+  const q = searchParams.get('q');
 
-  if (!query) {
+  if (!q) {
     return NextResponse.json(
-      { error: 'Missing query parameter' },
+      { error: 'Missing q parameter' },
       { status: 400 }
     );
   }
 
+  const configured = await isSpotifyConfigured();
+  if (!configured) {
+    return NextResponse.json(
+      { error: 'Spotify API not configured', configured: false },
+      { status: 503 }
+    );
+  }
+
   try {
-    const metadata = await searchAlbum(query);
+    const metadata = await searchAlbum(q);
 
     if (!metadata) {
       return NextResponse.json(
