@@ -187,6 +187,19 @@ export async function getOrCreatePrivyUser(data: {
   // Check if user already exists by Privy ID
   const existingByPrivyId = await getUserByPrivyId(data.privyId);
   if (existingByPrivyId) {
+    // Update wallet address if it was missing and is now available
+    // (Privy creates embedded wallet async after login, so first sync may have no wallet)
+    if (data.walletAddress && !existingByPrivyId.walletAddress) {
+      const [updated] = await db
+        .update(users)
+        .set({
+          walletAddress: data.walletAddress.toLowerCase(),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existingByPrivyId.id))
+        .returning();
+      return updated;
+    }
     return existingByPrivyId;
   }
 

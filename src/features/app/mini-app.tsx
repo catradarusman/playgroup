@@ -9,12 +9,18 @@ import { ArchiveTab } from './components/archive-tab';
 import { ProfileView } from './components/profile-view';
 import { UserButton } from './components/login-modal';
 
+// Supports routing by FID (Farcaster users) or userId (Privy users)
+interface ProfileTarget {
+  fid?: number;
+  userId?: string;
+}
+
 export function MiniApp() {
   const { user } = useAuth();
-  const [viewingProfileFid, setViewingProfileFid] = useState<number | null>(null);
+  const [viewingProfile, setViewingProfile] = useState<ProfileTarget | null>(null);
 
   // Profile view overlay
-  if (viewingProfileFid !== null) {
+  if (viewingProfile !== null) {
     return (
       <div className="h-dvh flex flex-col overflow-hidden bg-black">
         <header className="shrink-0 p-4 border-b border-gray-800">
@@ -22,8 +28,9 @@ export function MiniApp() {
         </header>
         <div className="flex-1 overflow-y-auto p-4">
           <ProfileView
-            fid={viewingProfileFid}
-            onBack={() => setViewingProfileFid(null)}
+            fid={viewingProfile.fid}
+            userId={viewingProfile.userId}
+            onBack={() => setViewingProfile(null)}
           />
         </div>
       </div>
@@ -39,10 +46,12 @@ export function MiniApp() {
           <H3 className="text-white text-center">Playgroup</H3>
           <UserButton
             onProfileClick={() => {
-              // For Farcaster users, use their FID
-              // For Privy users, show their own profile via userId
               if (user?.fid) {
-                setViewingProfileFid(user.fid);
+                // Farcaster user — route by FID
+                setViewingProfile({ fid: user.fid });
+              } else if (user?.id) {
+                // Privy user — route by userId (fid is null)
+                setViewingProfile({ userId: user.id });
               }
             }}
           />
@@ -65,13 +74,13 @@ export function MiniApp() {
 
         {/* Tab content - each fills available space */}
         <TabsContent value="now" className="flex-1 overflow-y-auto p-4 mt-0">
-          <NowPlayingTab onViewProfile={setViewingProfileFid} />
+          <NowPlayingTab onViewProfile={(fid) => setViewingProfile({ fid })} />
         </TabsContent>
         <TabsContent value="vote" className="flex-1 overflow-y-auto p-4 mt-0">
-          <VoteTab onViewProfile={setViewingProfileFid} />
+          <VoteTab onViewProfile={(fid) => setViewingProfile({ fid })} />
         </TabsContent>
         <TabsContent value="archive" className="flex-1 overflow-y-auto p-4 mt-0">
-          <ArchiveTab onViewProfile={setViewingProfileFid} />
+          <ArchiveTab onViewProfile={(fid) => setViewingProfile({ fid })} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/neynar-db-sdk/db';
-import { albums, votes, reviews } from '@/db/schema';
+import { albums, votes, reviews, users } from '@/db/schema';
 import { eq, desc, sql, min } from 'drizzle-orm';
 
 /**
@@ -174,6 +174,179 @@ export async function getUserInfoByFid(fid: number) {
 
   if (review[0]) {
     return { username: review[0].username, pfp: review[0].pfp };
+  }
+
+  return null;
+}
+
+// ============================================================
+// userId-based profile functions (for Privy / non-Farcaster users)
+// ============================================================
+
+/**
+ * Get complete profile data for a user by internal userId
+ * Used for Privy users who have no Farcaster FID
+ */
+export async function getProfileByUserId(userId: string) {
+  const [submissions, userReviews, voteStats, memberSince] = await Promise.all([
+    getSubmissionsByUserId(userId),
+    getReviewsByUserId(userId),
+    getVoteStatsForUserId(userId),
+    getMemberSinceByUserId(userId),
+  ]);
+
+  return {
+    userId,
+    submissions,
+    reviews: userReviews,
+    stats: {
+      totalSubmissions: submissions.length,
+      totalWins: submissions.filter((s) => s.status === 'selected').length,
+      totalReviews: userReviews.length,
+      avgRatingGiven: userReviews.length > 0
+        ? Math.round((userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length) * 10) / 10
+        : null,
+      totalVotesReceived: voteStats.totalVotesReceived,
+    },
+    memberSince,
+  };
+}
+
+/**
+ * Get all albums submitted by a user (by userId)
+ */
+async function getSubmissionsByUserId(userId: string) {
+  const result = await db
+    .select()
+    .from(albums)
+    .where(eq(albums.submittedByUserId, userId))
+    .orderBy(desc(albums.createdAt));
+
+  const submissionsWithVotes = await Promise.all(
+    result.map(async (album) => {
+      const voteCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(votes)
+        .where(eq(votes.albumId, album.id));
+
+      return {
+        id: album.id,
+        title: album.title,
+        artist: album.artist,
+        coverUrl: album.coverUrl,
+        spotifyUrl: album.spotifyUrl,
+        status: album.status,
+        votes: Number(voteCount[0]?.count ?? 0),
+        avgRating: album.avgRating,
+        totalReviews: album.totalReviews ?? 0,
+        createdAt: album.createdAt,
+      };
+    })
+  );
+
+  return submissionsWithVotes;
+}
+
+/**
+ * Get all reviews written by a user (by userId)
+ */
+async function getReviewsByUserId(userId: string) {
+  const result = await db
+    .select({
+      review: reviews,
+      album: albums,
+    })
+    .from(reviews)
+    .innerJoin(albums, eq(reviews.albumId, albums.id))
+    .where(eq(reviews.reviewerId, userId))
+    .orderBy(desc(reviews.createdAt));
+
+  return result.map((r) => ({
+    id: r.review.id,
+    rating: r.review.rating,
+    text: r.review.reviewText,
+    favoriteTrack: r.review.favoriteTrack,
+    createdAt: r.review.createdAt,
+    album: {
+      id: r.album.id,
+      title: r.album.title,
+      artist: r.album.artist,
+      coverUrl: r.album.coverUrl,
+    },
+  }));
+}
+
+/**
+ * Get total votes received on all submissions by a user (by userId)
+ */
+async function getVoteStatsForUserId(userId: string) {
+  const userAlbums = await db
+    .select({ id: albums.id })
+    .from(albums)
+    .where(eq(albums.submittedByUserId, userId));
+
+  if (userAlbums.length === 0) {
+    return { totalVotesReceived: 0 };
+  }
+
+  const albumIds = userAlbums.map((a) => a.id);
+
+  const voteCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(votes)
+    .where(sql`${votes.albumId} IN (${sql.join(albumIds.map(id => sql`${id}`), sql`, `)})`);
+
+  return {
+    totalVotesReceived: Number(voteCount[0]?.count ?? 0),
+  };
+}
+
+/**
+ * Get the earliest activity date for a user (by userId)
+ */
+async function getMemberSinceByUserId(userId: string) {
+  const [earliestSubmission, earliestReview] = await Promise.all([
+    db
+      .select({ date: min(albums.createdAt) })
+      .from(albums)
+      .where(eq(albums.submittedByUserId, userId)),
+    db
+      .select({ date: min(reviews.createdAt) })
+      .from(reviews)
+      .where(eq(reviews.reviewerId, userId)),
+  ]);
+
+  const dates = [
+    earliestSubmission[0]?.date,
+    earliestReview[0]?.date,
+  ].filter(Boolean) as Date[];
+
+  if (dates.length === 0) return null;
+
+  return new Date(Math.min(...dates.map((d) => d.getTime())));
+}
+
+/**
+ * Get basic user info by userId (for viewing Privy user profiles)
+ */
+export async function getUserInfoByUserId(userId: string) {
+  // Look up directly from users table
+  const user = await db
+    .select({
+      username: users.username,
+      pfpUrl: users.pfpUrl,
+      displayName: users.displayName,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user[0]) {
+    return {
+      username: user[0].username,
+      pfp: user[0].pfpUrl ?? undefined,
+      displayName: user[0].displayName,
+    };
   }
 
   return null;

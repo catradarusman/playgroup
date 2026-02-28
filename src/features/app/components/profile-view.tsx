@@ -2,32 +2,36 @@
 
 import { Card, CardContent, H2, H3, H4, P, Button } from '@neynar/ui';
 import { useAuth } from '@/hooks/use-auth';
-import { useProfile, useUserInfo, ProfileData } from '@/hooks/use-profile';
+import { useProfile, useUserInfo } from '@/hooks/use-profile';
 
 interface ProfileViewProps {
-  fid: number;
+  fid?: number | null;      // Farcaster users
+  userId?: string | null;   // Privy users (no FID)
   onBack: () => void;
   onViewAlbum?: (albumId: string) => void;
 }
 
-export function ProfileView({ fid, onBack, onViewAlbum }: ProfileViewProps) {
+export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewProps) {
   // Unified auth - supports both Farcaster and Privy users
   const { user: currentUser } = useAuth();
-  const { profile, isLoading, error } = useProfile(fid);
-  const { userInfo } = useUserInfo(fid);
 
-  // Check if this is the current user's profile
-  // Works for Farcaster users (fid match) - Privy-only users won't have profiles in the FID-based system
-  const isOwnProfile = currentUser?.fid === fid;
+  // Load profile data — useProfile handles fid vs userId routing
+  const { profile, isLoading, error } = useProfile(fid ?? null, userId ?? null);
+  const { userInfo } = useUserInfo(fid ?? null, userId ?? null);
 
-  // Get display info - prefer current user data for own profile, otherwise use DB lookup
+  // Check if this is the current user's own profile
+  const isOwnProfile =
+    (currentUser?.fid != null && fid != null && currentUser.fid === fid) ||
+    (currentUser?.id != null && userId != null && currentUser.id === userId);
+
+  // Display info — prefer current user's live data for own profile
   const displayName = isOwnProfile
     ? currentUser?.username
-    : userInfo?.username ?? `User ${fid}`;
-  // Ensure displayPfp is always a string (never null/undefined) for <img src>
+    : userInfo?.username ?? (fid ? `User ${fid}` : 'User');
+
   const displayPfp: string = isOwnProfile
-    ? (currentUser?.pfpUrl ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`)
-    : (userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid}`);
+    ? (currentUser?.pfpUrl ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`)
+    : (userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`);
 
   if (isLoading) {
     return (

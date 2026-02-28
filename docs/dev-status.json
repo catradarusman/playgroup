@@ -3,7 +3,7 @@
   "readyToPublish": true,
   "currentPhase": 6,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-08T15:30:00.000Z",
+  "lastUpdatedAt": "2026-02-28T00:00:00.000Z",
   "completedAt": null,
   "phases": {
     "1": {
@@ -139,6 +139,30 @@
             "src/features/app/components/album-detail-view.tsx",
             "src/features/app/components/vote-tab.tsx"
           ]
+        },
+        "privy-profile-click": {
+          "description": "Profile avatar click did nothing for Privy users — user.fid is null so setViewingProfileFid was silently skipped",
+          "status": "completed",
+          "files": ["src/features/app/mini-app.tsx"]
+        },
+        "privy-profile-data": {
+          "description": "Profile data (submissions, reviews, stats) was entirely FID-based; Privy users always showed empty profile. Added userId-based query path throughout.",
+          "status": "completed",
+          "files": [
+            "src/db/actions/profile-actions.ts",
+            "src/hooks/use-profile.ts",
+            "src/features/app/components/profile-view.tsx"
+          ]
+        },
+        "privy-wallet-update": {
+          "description": "Wallet address never updated after Privy embedded wallet was created async post-login — getOrCreatePrivyUser returned immediately without persisting the wallet",
+          "status": "completed",
+          "files": ["src/db/actions/user-actions.ts"]
+        },
+        "listening-phase-submit-hidden": {
+          "description": "Submit album button was silently absent during listening phase for authenticated users with no explanation shown",
+          "status": "completed",
+          "files": ["src/features/app/components/vote-tab.tsx"]
         }
       },
       "themeRefinement": {
@@ -179,7 +203,8 @@
       "reviews",
       "users"
     ],
-    "deezerIntegration": true,
+    "deezerIntegration": false,
+    "spotifyIntegration": true,
     "privyConfigured": true,
     "productionReady": true
   },

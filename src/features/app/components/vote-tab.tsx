@@ -146,6 +146,11 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
           </Button>
         </div>
       )}
+      {!canVote && isAuthenticated && (
+        <div className="text-center py-2">
+          <P className="text-sm text-gray-500">Submissions open Monday during voting phase</P>
+        </div>
+      )}
 
       {/* Submissions List */}
       {submissions.length === 0 ? (
