@@ -128,9 +128,14 @@ export function useAuth(): UseAuthResult {
         );
 
         if (linkedFarcaster && 'fid' in linkedFarcaster) {
+          // Validate fid is a real number before using it
+          const rawFid = linkedFarcaster.fid;
+          const fid = typeof rawFid === 'number' ? rawFid : Number(rawFid);
+          if (!fid || isNaN(fid)) return;
+
           // User linked Farcaster - treat as Farcaster user
           const dbUser = await getOrCreateFarcasterUser({
-            fid: linkedFarcaster.fid as number,
+            fid,
             username: (linkedFarcaster as any).username || email?.split('@')[0] || 'user',
             displayName: (linkedFarcaster as any).displayName || (linkedFarcaster as any).username || 'User',
             pfpUrl: (linkedFarcaster as any).pfp,

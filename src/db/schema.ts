@@ -1,4 +1,5 @@
-import { pgTable, text, uuid, integer, timestamp, real, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, integer, timestamp, real, boolean, jsonb, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /**
  * Key-Value Store Table
@@ -56,7 +57,7 @@ export const cycles = pgTable("cycles", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   votingEndsAt: timestamp("voting_ends_at").notNull(),
-  winnerId: uuid("winner_id"), // references albums.id when selected
+  winnerId: uuid("winner_id"), // references albums.id when selected (FK omitted to avoid circular type inference)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -70,9 +71,9 @@ export const albums = pgTable("albums", {
   artist: text("artist").notNull(),
   coverUrl: text("cover_url").notNull(),
   spotifyUrl: text("spotify_url").notNull(),
-  cycleId: uuid("cycle_id").notNull(),
+  cycleId: uuid("cycle_id").notNull().references(() => cycles.id),
   submittedByFid: integer("submitted_by_fid"), // Legacy - nullable for new users
-  submittedByUserId: uuid("submitted_by_user_id"), // New - references users.id
+  submittedByUserId: uuid("submitted_by_user_id").references(() => users.id), // New - references users.id
   submittedByUsername: text("submitted_by_username").notNull(),
   status: text("status").notNull(), // 'voting' | 'selected' | 'lost'
   avgRating: real("avg_rating"),
@@ -81,27 +82,43 @@ export const albums = pgTable("albums", {
   mostLovedTrackVotes: integer("most_loved_track_votes").default(0),
   tracks: jsonb("tracks"), // string[] of track names (cached from Spotify)
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Prevent duplicate Spotify ID in same cycle
+  uniqueIndex("albums_cycle_spotify_unique").on(table.cycleId, table.spotifyId),
+  // Enforce only one winner per cycle
+  uniqueIndex("albums_one_winner_per_cycle")
+    .on(table.cycleId, table.status)
+    .where(sql`${table.status} = 'selected'`),
+]);
 
 /**
  * Votes - one per user per album
  */
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  albumId: uuid("album_id").notNull(),
+  albumId: uuid("album_id").notNull().references(() => albums.id),
   voterFid: integer("voter_fid"), // Legacy - nullable for new users
-  voterId: uuid("voter_id"), // New - references users.id
+  voterId: uuid("voter_id").references(() => users.id), // New - references users.id
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Prevent duplicate votes: one per userId per album (partial — skips NULLs)
+  uniqueIndex("votes_album_voter_id_unique")
+    .on(table.albumId, table.voterId)
+    .where(sql`${table.voterId} IS NOT NULL`),
+  // Prevent duplicate votes: one per FID per album (legacy path)
+  uniqueIndex("votes_album_voter_fid_unique")
+    .on(table.albumId, table.voterFid)
+    .where(sql`${table.voterFid} IS NOT NULL`),
+]);
 
 /**
  * Reviews - one per user per album
  */
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
-  albumId: uuid("album_id").notNull(),
+  albumId: uuid("album_id").notNull().references(() => albums.id),
   reviewerFid: integer("reviewer_fid"), // Legacy - nullable for new users
-  reviewerId: uuid("reviewer_id"), // New - references users.id
+  reviewerId: uuid("reviewer_id").references(() => users.id), // New - references users.id
   reviewerUsername: text("reviewer_username").notNull(),
   reviewerPfp: text("reviewer_pfp"),
   rating: integer("rating").notNull(), // 1-5
@@ -109,4 +126,15 @@ export const reviews = pgTable("reviews", {
   favoriteTrack: text("favorite_track"),
   hasListened: boolean("has_listened").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  // Enforce 1–5 rating at DB level
+  check("rating_1_to_5", sql`${table.rating} >= 1 AND ${table.rating} <= 5`),
+  // Prevent duplicate reviews: one per userId per album
+  uniqueIndex("reviews_album_reviewer_id_unique")
+    .on(table.albumId, table.reviewerId)
+    .where(sql`${table.reviewerId} IS NOT NULL`),
+  // Prevent duplicate reviews: one per FID per album (legacy path)
+  uniqueIndex("reviews_album_reviewer_fid_unique")
+    .on(table.albumId, table.reviewerFid)
+    .where(sql`${table.reviewerFid} IS NOT NULL`),
+]);

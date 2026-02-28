@@ -1,84 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Playgroup
 
-## Database Schema
+A social music app where a community votes on one album per week, listens together for 7 days, then writes reviews. 52 albums a year. No algorithms.
 
-This project uses [Drizzle ORM](https://orm.drizzle.team/) for database management. The schema is defined in `src/db/schema.ts`.
+Built as a Farcaster mini app with universal web access via Privy.
 
-### ⚠️ CRITICAL: Do Not Delete or Edit the `kv` Table
+---
 
-The `kv` table in `src/db/schema.ts` is a **required built-in table** that must never be removed or modified. Deleting or editing this table definition will cause:
-
-- Database schema conflicts during deployment
-- Interactive prompts during `drizzle-kit push` that block app startup
-- Deployment failures and health check timeouts
-
-**Rules for the `kv` table:**
-
-- ❌ Never delete the table definition
-- ❌ Never modify the table name, fields, or types
-- ❌ Never rename or comment out the table
-- ✅ Always keep it exactly as defined in the template
-
-**Always keep the `kv` table definition unchanged in your schema file, even if you don't use it.**
-
-### Adding Custom Tables
-
-Add your custom table definitions below the `kv` table in `src/db/schema.ts`. See the examples in that file for reference.
-
-### Database Schema Push Behavior
-
-The `db:push` command uses `drizzle-kit push` to synchronize your schema with the database. **This command is configured to fail fast** rather than prompt for user input.
-
-**Important behavior:**
-
-- The push command will **fail immediately** if there are ambiguous or destructive schema changes
-- This is intentional to prevent blocking deployments
-- Common failure scenarios:
-  - Renaming columns (Drizzle can't distinguish rename from delete+add)
-  - Renaming tables
-  - Adding constraints to tables with existing data
-  - Ambiguous schema changes
-
-**When the push fails, you should:**
-
-1. Make non-destructive changes instead:
-   - **Instead of renaming columns:** Add a new column, migrate data, then remove the old column in a separate change
-   - **Instead of renaming tables:** Create a new table with the desired name
-   - **Instead of adding unique constraints to populated tables:** Clear data first or use nullable fields
-2. Review the error message from `drizzle-kit push` to understand what change is ambiguous
-3. Adjust your schema to be more explicit and non-destructive
-
-## Getting Started
-
-First, run the development server:
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # Turbopack (port 3000) — recommended
+npm run dev:webpack  # Webpack fallback (port 3001)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and fill in your credentials before starting.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+| Variable                    | Required | Purpose                                    |
+| --------------------------- | -------- | ------------------------------------------ |
+| `DATABASE_URL`              | Yes      | Neon PostgreSQL connection string          |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | Privy app ID for universal login           |
+| `PRIVY_APP_SECRET`          | Yes      | Privy app secret                           |
+| `NEYNAR_API_KEY`            | Yes      | Neynar SDK for Farcaster cast search       |
+| `ADMIN_SECRET`              | Yes      | Bearer token for `/api/admin/reset-cycle`  |
+| `COINGECKO_API_KEY`         | No       | CoinGecko API key (optional, demo feature) |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Database
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Uses [Drizzle ORM](https://orm.drizzle.team/) with Neon PostgreSQL.
 
-## Deploy on Vercel
+```bash
+npm run db:push    # Apply schema changes to database
+npm run db:studio  # Open Drizzle Studio (visual DB browser)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Schema overview
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Table     | Purpose                                   |
+| --------- | ----------------------------------------- |
+| `kv`      | Built-in key-value store (do not modify)  |
+| `users`   | Unified identity for FC + Privy users     |
+| `cycles`  | 1-week listening cycles (52/year)         |
+| `albums`  | Submitted and winning albums              |
+| `votes`   | One vote per user per album               |
+| `reviews` | User reviews with 1–5 star ratings        |
+
+### ⚠️ Do not modify the `kv` table
+
+The `kv` table in `src/db/schema.ts` is a **required platform table**. Never delete, rename, or change its columns. Doing so will cause schema conflicts and break deployments.
+
+### Schema push behavior
+
+`npm run db:push` uses `drizzle-kit push` and is configured to **fail fast** on ambiguous or destructive changes rather than prompt interactively (which would block CI/deployments).
+
+Common failure triggers:
+- Renaming a column (Drizzle can't distinguish rename from drop+add)
+- Adding a unique constraint to a column that already has duplicate data
+- Renaming a table
+
+When this happens, make the change non-destructively: add the new column, migrate data, then drop the old one in a separate push.
+
+---
+
+## Tech Stack
+
+| Layer          | Technology                              |
+| -------------- | --------------------------------------- |
+| Framework      | Next.js 16 (App Router) + React 19      |
+| Build          | Turbopack (dev), standard (prod)        |
+| Database       | Neon PostgreSQL + Drizzle ORM v0.38     |
+| Auth           | Farcaster mini app SDK + Privy          |
+| UI             | @neynar/ui components                   |
+| Fonts          | Outfit (UI) + JetBrains Mono (numbers)  |
+| External APIs  | Deezer (album metadata), Neynar (casts) |
+
+---
+
+## Admin Endpoints
+
+### `GET /api/admin/reset-cycle`
+
+Force-creates a new voting cycle. Requires `Authorization: Bearer <ADMIN_SECRET>` header.
+
+```bash
+curl -H "Authorization: Bearer your_secret" http://localhost:3000/api/admin/reset-cycle
+```
+
+Returns 401 if secret is missing or incorrect.
+
+---
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages + API routes
+│   └── api/
+│       ├── admin/          # Admin-only endpoints (auth required)
+│       ├── deezer/         # Deezer metadata proxy
+│       └── share/          # Share image generation (OG images)
+├── config/
+│   └── private-config.ts   # Zod-validated server-side env vars
+├── db/
+│   ├── schema.ts           # All table definitions
+│   └── actions/            # Server actions (data layer)
+│       ├── cycle-actions.ts
+│       ├── submission-actions.ts
+│       ├── review-actions.ts
+│       ├── profile-actions.ts
+│       └── user-actions.ts
+├── features/
+│   └── app/                # Main app shell + all UI components
+│       ├── mini-app.tsx
+│       ├── privy-wrapper.tsx
+│       └── components/
+├── hooks/                  # React data hooks (call server actions)
+│   ├── use-auth.ts         # Unified FC + Privy auth
+│   ├── use-cycle.ts
+│   ├── use-submissions.ts
+│   ├── use-reviews.ts
+│   ├── use-profile.ts
+│   └── use-album-buzz.ts
+└── lib/                    # Utilities (Deezer client, Privy config)
+```
+
+---
+
+## Key Implementation Notes
+
+1. **Unified auth**: All user-facing actions support both Farcaster FID (legacy) and `userId` (Privy/new). Never assume `fid` is present.
+2. **Race-safe writes**: All DB writes that check-then-insert run inside `db.transaction()`. The schema also enforces uniqueness at the DB level (partial indexes) as a last resort.
+3. **N+1 free**: Vote and review counts are fetched with `LEFT JOIN + GROUP BY`, not per-row queries.
+4. **No mock data**: All components use real DB data and show empty states when no data exists.
+5. **DiceBear avatars**: Privy users who have no Farcaster PFP get a deterministic DiceBear avatar seeded from their `userId`.
+6. **Cycle auto-create**: `getOrCreateCurrentCycle()` creates Week 1 automatically on first app load — no manual setup needed.
+
+---
+
+## See Also
+
+- **[specs.md](./specs.md)** — App features, data architecture, environment variables, changelog
+- **[wiring-plan.md](./wiring-plan.md)** — Schema, server actions, hooks, components, validation rules
+- **[roadmap.md](./roadmap.md)** — Implemented features and planned next steps

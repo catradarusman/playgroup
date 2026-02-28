@@ -11,7 +11,14 @@ import { createCycle } from '@/db/actions/cycle-actions';
  * Creates a fresh voting cycle starting now, with 4 days of voting.
  * Safe to call multiple times - each call creates a new cycle with an incremented week number.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  // Require a Bearer token matching ADMIN_SECRET env var
+  const secret = process.env.ADMIN_SECRET;
+  const auth = request.headers.get('authorization');
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const now = new Date();
     const year = now.getFullYear();

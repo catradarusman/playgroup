@@ -2,7 +2,7 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { cycles, albums, votes } from '@/db/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql, getTableColumns } from 'drizzle-orm';
 
 /**
  * Get the current active cycle
@@ -57,72 +57,76 @@ export async function getCycleWithCountdown() {
 
 /**
  * Auto-transition from voting to listening phase
- * Selects the winner based on votes
+ * Wrapped in a transaction to prevent race conditions from concurrent requests.
+ * Re-checks cycle phase at the start for idempotency.
  */
 async function autoTransitionToListening(cycleId: string) {
-  // Get all albums in voting status for this cycle with vote counts
-  const albumsResult = await db
-    .select()
-    .from(albums)
-    .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')));
+  return await db.transaction(async (tx) => {
+    // Re-check inside transaction: if another request already transitioned, skip
+    const [currentCycle] = await tx
+      .select()
+      .from(cycles)
+      .where(eq(cycles.id, cycleId))
+      .limit(1);
 
-  if (albumsResult.length === 0) {
-    // No submissions - transition to listening anyway but with no winner
-    await db
+    if (!currentCycle || currentCycle.phase !== 'voting') {
+      return { success: false, error: 'Already transitioned' };
+    }
+
+    // Single aggregating query replaces N+1 vote-count loop
+    const albumsWithVotes = await tx
+      .select({
+        ...getTableColumns(albums),
+        voteCount: sql<number>`count(${votes.id})::int`,
+      })
+      .from(albums)
+      .leftJoin(votes, eq(votes.albumId, albums.id))
+      .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')))
+      .groupBy(albums.id);
+
+    if (albumsWithVotes.length === 0) {
+      // No submissions — transition to listening with no winner
+      await tx
+        .update(cycles)
+        .set({ phase: 'listening' })
+        .where(eq(cycles.id, cycleId));
+      return { success: true, winner: null };
+    }
+
+    // Find the highest vote count
+    const maxVotes = Math.max(...albumsWithVotes.map((a) => a.voteCount));
+    const topAlbums = albumsWithVotes.filter((a) => a.voteCount === maxVotes);
+
+    // Tiebreaker: earliest submission wins
+    topAlbums.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const winner = topAlbums[0];
+
+    // Update winner status to 'selected'
+    await tx
+      .update(albums)
+      .set({ status: 'selected' })
+      .where(eq(albums.id, winner.id));
+
+    // Update all other voting albums to 'lost'
+    await tx
+      .update(albums)
+      .set({ status: 'lost' })
+      .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')));
+
+    // Update cycle with winner and phase
+    await tx
       .update(cycles)
-      .set({ phase: 'listening' })
+      .set({ winnerId: winner.id, phase: 'listening' })
       .where(eq(cycles.id, cycleId));
-    return { success: true, winner: null };
-  }
 
-  // Get vote counts for each album
-  const albumsWithVotes = await Promise.all(
-    albumsResult.map(async (album) => {
-      const voteCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(votes)
-        .where(eq(votes.albumId, album.id));
-      return {
-        ...album,
-        voteCount: Number(voteCount[0]?.count ?? 0),
-      };
-    })
-  );
-
-  // Find the highest vote count
-  const maxVotes = Math.max(...albumsWithVotes.map((a) => a.voteCount));
-  const topAlbums = albumsWithVotes.filter((a) => a.voteCount === maxVotes);
-
-  // Tiebreaker: earliest submission wins (sort by createdAt ascending)
-  topAlbums.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-  const winner = topAlbums[0];
-
-  // Update winner status to 'selected'
-  await db
-    .update(albums)
-    .set({ status: 'selected' })
-    .where(eq(albums.id, winner.id));
-
-  // Update all other voting albums to 'lost'
-  await db
-    .update(albums)
-    .set({ status: 'lost' })
-    .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')));
-
-  // Update cycle with winner and phase
-  await db
-    .update(cycles)
-    .set({ winnerId: winner.id, phase: 'listening' })
-    .where(eq(cycles.id, cycleId));
-
-  return { success: true, winner };
+    return { success: true, winner };
+  });
 }
 
 /**
  * Get the winning/current album for a cycle
  */
 export async function getCycleAlbum(cycleId: string) {
-  // Get the winning album for this cycle
   const result = await db
     .select()
     .from(albums)
@@ -134,9 +138,9 @@ export async function getCycleAlbum(cycleId: string) {
 
 /**
  * Get past winning albums for archive
+ * Uses a JOIN instead of N+1 queries for cycle week numbers
  */
 export async function getPastAlbums(_year?: number) {
-  // Get all selected albums with their cycle info
   const result = await db
     .select({
       id: albums.id,
@@ -152,49 +156,32 @@ export async function getPastAlbums(_year?: number) {
       submittedByFid: albums.submittedByFid,
       submittedByUsername: albums.submittedByUsername,
       createdAt: albums.createdAt,
+      weekNumber: cycles.weekNumber,
     })
     .from(albums)
+    .innerJoin(cycles, eq(cycles.id, albums.cycleId))
     .where(eq(albums.status, 'selected'))
     .orderBy(desc(albums.createdAt));
 
-  // Get cycle week numbers
-  const albumsWithWeeks = await Promise.all(
-    result.map(async (album) => {
-      const cycle = await db
-        .select({ weekNumber: cycles.weekNumber })
-        .from(cycles)
-        .where(eq(cycles.id, album.cycleId))
-        .limit(1);
-
-      return {
-        ...album,
-        weekNumber: cycle[0]?.weekNumber ?? 0,
-      };
-    })
-  );
-
-  return albumsWithWeeks;
+  return result;
 }
 
 /**
  * Get album by ID with full details
+ * Uses a JOIN instead of two separate queries
  */
 export async function getAlbumById(albumId: string) {
-  const result = await db.select().from(albums).where(eq(albums.id, albumId)).limit(1);
-
-  if (!result[0]) return null;
-
-  // Get cycle info
-  const cycle = await db
-    .select({ weekNumber: cycles.weekNumber })
-    .from(cycles)
-    .where(eq(cycles.id, result[0].cycleId))
+  const result = await db
+    .select({
+      ...getTableColumns(albums),
+      weekNumber: cycles.weekNumber,
+    })
+    .from(albums)
+    .innerJoin(cycles, eq(cycles.id, albums.cycleId))
+    .where(eq(albums.id, albumId))
     .limit(1);
 
-  return {
-    ...result[0],
-    weekNumber: cycle[0]?.weekNumber ?? 0,
-  };
+  return result[0] ?? null;
 }
 
 /**

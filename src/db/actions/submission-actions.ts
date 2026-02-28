@@ -7,6 +7,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 /**
  * Submit a new album for voting
  * Supports both FID (legacy) and userId (new Privy users)
+ * Wrapped in a transaction so duplicate-check + insert + auto-vote are atomic
  */
 export async function submitAlbum(data: {
   spotifyId: string;
@@ -20,18 +21,7 @@ export async function submitAlbum(data: {
   userId?: string; // New - unified user ID
   username: string;
 }) {
-  // Check for duplicate spotify ID in this cycle
-  const existingAlbum = await db
-    .select()
-    .from(albums)
-    .where(and(eq(albums.cycleId, data.cycleId), eq(albums.spotifyId, data.spotifyId)))
-    .limit(1);
-
-  if (existingAlbum.length > 0) {
-    return { success: false, error: 'Already submitted - go upvote it!' };
-  }
-
-  // Check if this album was a past winner
+  // Check if this album was a past winner (outside transaction — read-only, no race risk)
   const pastWinner = await db
     .select()
     .from(albums)
@@ -39,73 +29,97 @@ export async function submitAlbum(data: {
     .limit(1);
 
   if (pastWinner.length > 0) {
-    return { success: false, error: 'This won before - check The 52!' };
+    return { success: false as const, error: 'This won before - check The 52!' };
   }
 
-  // Insert the album
-  const result = await db
-    .insert(albums)
-    .values({
-      spotifyId: data.spotifyId,
-      title: data.title,
-      artist: data.artist,
-      coverUrl: data.coverUrl,
-      spotifyUrl: data.spotifyUrl,
-      tracks: data.tracks ?? null,
-      cycleId: data.cycleId,
-      submittedByFid: data.fid ?? null,
-      submittedByUserId: data.userId ?? null,
-      submittedByUsername: data.username,
-      status: 'voting',
-    })
-    .returning();
+  try {
+    return await db.transaction(async (tx) => {
+      // Re-check for duplicate inside transaction to close the race window
+      const existingAlbum = await tx
+        .select()
+        .from(albums)
+        .where(and(eq(albums.cycleId, data.cycleId), eq(albums.spotifyId, data.spotifyId)))
+        .limit(1);
 
-  const album = result[0];
+      if (existingAlbum.length > 0) {
+        return { success: false as const, error: 'Already submitted - go upvote it!' };
+      }
 
-  // Auto-vote for the submitter's own album
-  await db.insert(votes).values({
-    albumId: album.id,
-    voterFid: data.fid ?? null,
-    voterId: data.userId ?? null,
-  });
+      // Insert the album
+      const result = await tx
+        .insert(albums)
+        .values({
+          spotifyId: data.spotifyId,
+          title: data.title,
+          artist: data.artist,
+          coverUrl: data.coverUrl,
+          spotifyUrl: data.spotifyUrl,
+          tracks: data.tracks ?? null,
+          cycleId: data.cycleId,
+          submittedByFid: data.fid ?? null,
+          submittedByUserId: data.userId ?? null,
+          submittedByUsername: data.username,
+          status: 'voting',
+        })
+        .returning();
 
-  return { success: true, album };
+      const album = result[0];
+
+      // Auto-vote for the submitter's own album (same transaction)
+      await tx.insert(votes).values({
+        albumId: album.id,
+        voterFid: data.fid ?? null,
+        voterId: data.userId ?? null,
+      });
+
+      return { success: true as const, album };
+    });
+  } catch (err: unknown) {
+    // Unique index violation means a concurrent request beat us to it
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('unique') || msg.includes('duplicate')) {
+      return { success: false as const, error: 'Already submitted - go upvote it!' };
+    }
+    throw err;
+  }
 }
 
 /**
  * Get all submissions for a cycle with vote counts
+ * Uses a single JOIN query instead of N+1 per-album queries
  */
 export async function getSubmissions(cycleId: string) {
-  // Get all albums in voting status for this cycle
-  const albumsResult = await db
-    .select()
+  const rows = await db
+    .select({
+      id: albums.id,
+      title: albums.title,
+      artist: albums.artist,
+      coverUrl: albums.coverUrl,
+      spotifyUrl: albums.spotifyUrl,
+      submittedByFid: albums.submittedByFid,
+      submittedByUsername: albums.submittedByUsername,
+      createdAt: albums.createdAt,
+      votes: sql<number>`count(${votes.id})::int`,
+    })
     .from(albums)
+    .leftJoin(votes, eq(votes.albumId, albums.id))
     .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'voting')))
+    .groupBy(albums.id)
     .orderBy(desc(albums.createdAt));
 
-  // Get vote counts for each album
-  const submissionsWithVotes = await Promise.all(
-    albumsResult.map(async (album) => {
-      const voteCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(votes)
-        .where(eq(votes.albumId, album.id));
-
-      return {
-        id: album.id,
-        title: album.title,
-        artist: album.artist,
-        coverUrl: album.coverUrl,
-        spotifyUrl: album.spotifyUrl,
-        votes: Number(voteCount[0]?.count ?? 0),
-        submitterFid: album.submittedByFid,
-        submitter: album.submittedByUsername,
-        daysAgo: Math.floor((Date.now() - album.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
-      };
-    })
-  );
-
-  return submissionsWithVotes.sort((a, b) => b.votes - a.votes);
+  return rows
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      artist: row.artist,
+      coverUrl: row.coverUrl,
+      spotifyUrl: row.spotifyUrl,
+      votes: row.votes,
+      submitterFid: row.submittedByFid,
+      submitter: row.submittedByUsername,
+      daysAgo: Math.floor((Date.now() - row.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
+    }))
+    .sort((a, b) => b.votes - a.votes);
 }
 
 /**
@@ -162,44 +176,63 @@ export async function getUserSubmissionCount(cycleId: string, fid?: number, user
 /**
  * Cast a vote for an album
  * Supports both FID (legacy) and userId (new)
+ * Wrapped in a transaction so the duplicate-check + insert are atomic
  */
 export async function castVote(albumId: string, fid?: number, userId?: string) {
-  // Check if already voted for this album
-  let existingVote: any[] = [];
-
-  if (userId) {
-    existingVote = await db
-      .select()
-      .from(votes)
-      .where(and(eq(votes.albumId, albumId), eq(votes.voterId, userId)))
-      .limit(1);
-  } else if (fid) {
-    existingVote = await db
-      .select()
-      .from(votes)
-      .where(and(eq(votes.albumId, albumId), eq(votes.voterFid, fid)))
-      .limit(1);
+  // Guard: require at least one identity
+  if (!fid && !userId) {
+    return { success: false as const, error: 'Authentication required to vote' };
   }
 
-  if (existingVote.length > 0) {
-    return { success: false, error: 'Already voted for this album' };
+  try {
+    return await db.transaction(async (tx) => {
+      // Check if album exists and is in voting status
+      const [album] = await tx.select().from(albums).where(eq(albums.id, albumId)).limit(1);
+
+      if (!album || album.status !== 'voting') {
+        return { success: false as const, error: 'Album not available for voting' };
+      }
+
+      // Check for existing vote inside transaction to close the race window
+      let hasVoted = false;
+
+      if (userId) {
+        const [existing] = await tx
+          .select()
+          .from(votes)
+          .where(and(eq(votes.albumId, albumId), eq(votes.voterId, userId)))
+          .limit(1);
+        hasVoted = !!existing;
+      } else if (fid) {
+        const [existing] = await tx
+          .select()
+          .from(votes)
+          .where(and(eq(votes.albumId, albumId), eq(votes.voterFid, fid)))
+          .limit(1);
+        hasVoted = !!existing;
+      }
+
+      if (hasVoted) {
+        return { success: false as const, error: 'Already voted for this album' };
+      }
+
+      // Cast the vote
+      await tx.insert(votes).values({
+        albumId,
+        voterFid: fid ?? null,
+        voterId: userId ?? null,
+      });
+
+      return { success: true };
+    });
+  } catch (err: unknown) {
+    // Unique index violation means a concurrent request beat us to it
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('unique') || msg.includes('duplicate')) {
+      return { success: false as const, error: 'Already voted for this album' };
+    }
+    throw err;
   }
-
-  // Check if album exists and is in voting status
-  const album = await db.select().from(albums).where(eq(albums.id, albumId)).limit(1);
-
-  if (!album[0] || album[0].status !== 'voting') {
-    return { success: false, error: 'Album not available for voting' };
-  }
-
-  // Cast the vote
-  await db.insert(votes).values({
-    albumId,
-    voterFid: fid ?? null,
-    voterId: userId ?? null,
-  });
-
-  return { success: true };
 }
 
 /**
@@ -210,7 +243,7 @@ export async function selectWinner(cycleId: string) {
   const submissions = await getSubmissions(cycleId);
 
   if (submissions.length === 0) {
-    return { success: false, error: 'No submissions to select from' };
+    return { success: false as const, error: 'No submissions to select from' };
   }
 
   // Find the highest vote count

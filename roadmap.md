@@ -1,8 +1,8 @@
 # Playgroup - Feature Roadmap
 
 > **Created**: 2025-02-08
-> **Last Updated**: 2025-02-08
-> **Status**: Features #1, #2, #3, #5 Implemented + Privy Configured ✅
+> **Last Updated**: 2026-02-28
+> **Status**: Features #1, #2, #3, #5 Implemented + Privy Configured + Security Audit ✅
 
 ---
 
@@ -75,19 +75,6 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 | `src/hooks/use-profile.ts` | NEW | Small |
 | `src/features/app/components/profile-view.tsx` | NEW | Medium |
 
-**Modified Files**:
-
-| File | Changes | Effort |
-|------|---------|--------|
-| `src/features/app/components/main-tabs.tsx` | Add profile tab/menu | Small |
-| Review cards | Link usernames to profiles | Small |
-
-**Data Sources** (all exist):
-- Username/PFP: Farcaster SDK
-- Submissions: `albums` table by FID
-- Vote counts: `votes` table aggregate
-- Reviews: `reviews` table by FID
-
 ---
 
 ### 3. Community Buzz (Farcaster Integration) ✅ IMPLEMENTED
@@ -111,13 +98,6 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 |------|------|---------|
 | `src/hooks/use-album-buzz.ts` | NEW | Hook wrapping `useCastSearch` |
 | `src/features/app/components/album-buzz-section.tsx` | NEW | UI component for cast display |
-
-**Modified Files**:
-
-| File | Changes |
-|------|---------|
-| `src/features/app/components/now-playing-tab.tsx` | Replaced `useListenerCount` with `useAlbumBuzz`, added AlbumBuzzSection |
-| `src/features/app/components/album-detail-view.tsx` | Added AlbumBuzzSection |
 
 **Technical Details**:
 - Uses Neynar SDK `useCastSearch` hook
@@ -146,58 +126,7 @@ This document tracks planned features for Playgroup beyond the MVP. Features are
 | Your album wins | +5 | Earn |
 | Submit review | +3 | Earn |
 
-**Balance Rules**:
-- Cannot submit album with < 5 points
-- Cannot upvote with < 1 point
-- Balance visible in header at all times
-- Transaction history in profile
-
-**New Schema**:
-
-```typescript
-// userPoints - track balance per user
-userPoints: {
-  fid: integer (PK)
-  balance: integer
-  createdAt: timestamp
-  updatedAt: timestamp
-}
-
-// pointTransactions - full history
-pointTransactions: {
-  id: uuid (PK)
-  fid: integer
-  amount: integer (+ or -)
-  type: 'signup' | 'submit' | 'upvote' | 'received_upvote' | 'album_won' | 'review'
-  referenceId: uuid (nullable)
-  description: text
-  createdAt: timestamp
-}
-```
-
-**New Files**:
-
-| File | Type | Effort |
-|------|------|--------|
-| `src/db/actions/points-actions.ts` | NEW | Medium |
-| `src/hooks/use-points.ts` | NEW | Small |
-
-**Modified Files**:
-
-| File | Changes | Effort |
-|------|---------|--------|
-| `src/db/schema.ts` | Add 2 tables | Small |
-| `src/db/actions/submission-actions.ts` | Add point checks/awards | Medium |
-| `src/db/actions/review-actions.ts` | Add point awards | Small |
-| Header/Layout | Add balance display | Small |
-| `submission-form.tsx` | Balance check UI | Small |
-| `vote-tab.tsx` | Balance check UI | Small |
-| `profile-view.tsx` | Transaction history section | Medium |
-
-**Edge Cases**:
-- First-time user detection (check if userPoints row exists)
-- Race conditions (use DB transactions)
-- Zero balance state (show earn suggestions)
+> **Note**: Build #6 instead. DB-only points will be immediately superseded by on-chain version.
 
 ---
 
@@ -207,51 +136,13 @@ pointTransactions: {
 
 **Summary**: Allow anyone to join Playgroup via email, Google, or Farcaster. Non-Farcaster users get a Privy smart wallet automatically.
 
-**Vision**: Playgroup as a universal music app, not just a Farcaster app.
-
 **Auth Options**:
 
 | Method | Wallet | Identity |
 |--------|--------|----------|
-| Email | Privy smart wallet (auto-created) | Email + chosen username |
-| Google | Privy smart wallet (auto-created) | Google name + chosen username |
+| Email | Privy smart wallet (auto-created) | Email + derived username |
+| Google | Privy smart wallet (auto-created) | Google name + derived username |
 | Farcaster | FC embedded wallet | FC username + PFP |
-
-**New Schema - Unified Users Table**:
-
-```typescript
-users: {
-  id: uuid (PK)              // Internal ID - ALL tables reference this
-  fid: integer (nullable)    // If signed up via Farcaster
-  privyId: text (nullable)   // If signed up via Privy
-  walletAddress: text        // Always present (FC or Privy wallet)
-  email: text (nullable)     // Privy users
-  username: text             // FC username OR chosen name
-  displayName: text          // Full display name
-  pfpUrl: text (nullable)    // FC pfp OR generated avatar
-  authProvider: 'farcaster' | 'privy'
-  createdAt: timestamp
-  updatedAt: timestamp
-}
-```
-
-**Migration Strategy**:
-
-Current FID-based columns → New userId-based columns:
-
-| Table | Old Column | New Column |
-|-------|------------|------------|
-| albums | `submittedByFid` | `submittedByUserId` |
-| votes | `voterFid` | `voterId` |
-| reviews | `reviewerFid` | `reviewerId` |
-| userPoints | `fid` | `userId` |
-
-**Migration Steps**:
-1. Create `users` table
-2. Add new `userId` columns (nullable initially)
-3. Backfill: create user records for existing FIDs
-4. Update all actions to use `userId`
-5. Drop old `fid` columns (or keep for reference)
 
 **New Files**:
 
@@ -262,50 +153,57 @@ Current FID-based columns → New userId-based columns:
 | `src/db/actions/user-actions.ts` | User CRUD, lookup, sync | Medium |
 | `src/features/app/components/login-modal.tsx` | Multi-provider login UI | Medium |
 
-**Modified Files**:
-
-| File | Changes | Effort |
-|------|---------|--------|
-| `src/db/schema.ts` | Add `users` table, update FKs | Medium |
-| `src/db/actions/submission-actions.ts` | FID → userId | Medium |
-| `src/db/actions/review-actions.ts` | FID → userId | Small |
-| `src/db/actions/cycle-actions.ts` | FID → userId | Small |
-| `src/db/actions/profile-actions.ts` | Use userId | Small |
-| `src/db/actions/points-actions.ts` | Use userId | Small |
-| All components using `useFarcasterUser` | Switch to `useAuth` | Medium |
-| `providers-and-initialization.tsx` | Add PrivyProvider | Small |
-
-**Environment Variables**:
-```
-NEXT_PUBLIC_PRIVY_APP_ID=your_app_id
-PRIVY_APP_SECRET=your_secret
-```
-
-**Username Handling**:
-
-| Signup Method | Username Source |
-|---------------|-----------------|
-| Farcaster | `@username` from FC |
-| Email | Email prefix (e.g., `alice@gmail.com` → `alice`) |
-| Google | Google display name or email prefix |
-
-**First Login Flow (Privy users)**:
-1. Sign up with email/Google
-2. Prompt: "Choose a display name" (optional)
-3. Auto-generate avatar via DiceBear API
-
-**Edge Cases**:
-
-| Scenario | Solution |
-|----------|----------|
-| User has both FC and Privy | Link accounts via wallet address match |
-| Email user later joins FC | Prompt to link accounts |
-| Username collision | Add number suffix (`alice2`) |
-| Privy user wants FC features | Show "Connect Farcaster" option |
+**Implementation details**:
+- `users` table stores unified identity for both FC and Privy users
+- All other tables store both `*Fid` (legacy) and `*UserId` (new) columns
+- `useAuth()` hook handles both paths; always exposes `user.id` for DB references
+- DiceBear avatars for Privy users without a Farcaster PFP
+- Account linking: if a user's wallet address matches an existing FC user, accounts are linked
 
 ---
 
-### 6. $PLAY Token On-Chain (AUX-Style)
+### 6. Security & Reliability Audit ✅ COMPLETED (2026-02-28)
+
+**Complexity**: Medium | **Dependencies**: All existing features
+
+**Summary**: Fixed all critical and high severity issues found in a full codebase audit.
+
+**Issues Fixed**:
+
+| Category | Issue | Fix |
+|----------|-------|-----|
+| Race condition | `submitAlbum`: SELECT-then-INSERT not atomic | Wrapped in `db.transaction()` |
+| Race condition | `castVote`: SELECT-then-INSERT not atomic | Wrapped in `db.transaction()` |
+| Race condition | `submitReview`: SELECT-then-INSERT not atomic | Wrapped in `db.transaction()` |
+| Race condition | `autoTransitionToListening`: no idempotency guard | Added re-check inside transaction |
+| N+1 query | Vote counts fetched per-album in loop | Single `LEFT JOIN + GROUP BY` query |
+| N+1 query | `getPastAlbums` fetched cycle per-album | Single `INNER JOIN` query |
+| DB constraint | No unique index on votes | Added partial unique indexes |
+| DB constraint | No unique index on reviews | Added partial unique indexes |
+| DB constraint | No unique index on album submissions | Added `UNIQUE (cycleId, spotifyId)` |
+| DB constraint | No constraint for one winner per cycle | Added `UNIQUE (cycleId, status) WHERE status='selected'` |
+| DB constraint | Rating range not enforced at DB level | Added `CHECK (rating >= 1 AND rating <= 5)` |
+| Security | Admin endpoint unauthenticated | Added `ADMIN_SECRET` Bearer token check |
+| Security | CoinGecko API key hardcoded in source | Removed; made env var optional |
+| Type safety | `NEYNAR_API_KEY` had `|| ""` fallback | Removed so Zod `.min(1)` fires correctly |
+| Type safety | Linked Farcaster `fid` unchecked type assertion | Added runtime validation before use |
+| Avatar bug | Privy user avatars broken (null FID used as seed) | Fixed seed to use `reviewerId ?? reviewerFid ?? 'anon'` |
+
+**Files Changed**:
+
+| File | Changes |
+|------|---------|
+| `src/db/schema.ts` | Added FK constraints, unique indexes, check constraint |
+| `src/db/actions/cycle-actions.ts` | Transaction + idempotency + N+1 fixes |
+| `src/db/actions/submission-actions.ts` | Transactions + N+1 fix + auth guard |
+| `src/db/actions/review-actions.ts` | Transaction + avatar fix + TxClient pattern |
+| `src/app/api/admin/reset-cycle/route.ts` | Bearer token auth |
+| `src/config/private-config.ts` | Removed hardcoded key, fixed Zod validation |
+| `src/hooks/use-auth.ts` | FID type safety fix |
+
+---
+
+### 7. $PLAY Token On-Chain (AUX-Style)
 
 **Complexity**: High | **Est. Time**: 5-7 hrs | **Dependencies**: #2 (Profile), #5 (Privy/Wallets)
 
@@ -346,20 +244,17 @@ PRIVY_APP_SECRET=your_secret
 
 ```solidity
 contract PlaygroupCore {
-    // External $PLAY token (provided, 1B supply)
     IERC20 public playToken;
 
-    // Constants (like AUX)
-    uint256 public constant SUBMIT_COST = 5 ether;    // 5 $PLAY (18 decimals)
-    uint256 public constant VOTE_COST = 1 ether;      // 1 $PLAY
-    uint256 public constant SIGNUP_BONUS = 100 ether; // 100 $PLAY
-    uint256 public constant VOTE_REWARD = 1 ether;    // +1 per upvote
-    uint256 public constant WIN_REWARD = 5 ether;     // +5 when album wins
-    uint256 public constant REVIEW_REWARD = 3 ether;  // +3 for review
+    uint256 public constant SUBMIT_COST   = 5 ether;    // 5 $PLAY (18 decimals)
+    uint256 public constant VOTE_COST     = 1 ether;    // 1 $PLAY
+    uint256 public constant SIGNUP_BONUS  = 100 ether;  // 100 $PLAY
+    uint256 public constant VOTE_REWARD   = 1 ether;    // +1 per upvote received
+    uint256 public constant WIN_REWARD    = 5 ether;    // +5 when album wins
+    uint256 public constant REVIEW_REWARD = 3 ether;    // +3 for review
 
-    // On-chain state
     struct Album {
-        string spotifyUrl;      // Only URL stored on-chain
+        string spotifyUrl;   // Only URL stored on-chain
         address submitter;
         uint256 votes;
         uint256 cycleId;
@@ -368,10 +263,10 @@ contract PlaygroupCore {
 
     Album[] public albums;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
-    mapping(address => uint256) public bonusBalance;  // Non-transferable
+    mapping(address => uint256) public bonusBalance;   // Non-transferable spend-only
     mapping(address => bool) public hasClaimedBonus;
 
-    // User actions (on-chain, user pays gas)
+    // User actions (user pays gas)
     function submitAlbum(string calldata spotifyUrl, uint256 cycleId) external;
     function vote(uint256 albumId) external;
     function claimSignupBonus() external;
@@ -382,23 +277,14 @@ contract PlaygroupCore {
 }
 ```
 
-### Bonus vs Earned Balances
-
-| Balance Type | Storage | Transferable? | Use |
-|--------------|---------|---------------|-----|
-| **Bonus** | Contract mapping | No | Spend on submit/vote |
-| **Earned** | $PLAY ERC-20 | Yes | Spend, transfer, hold |
-
-**Spending logic**: Bonus deducted first, then $PLAY tokens.
-
 ### User Flow Changes
 
-**Current (Database - instant)**:
+**Current (database — instant)**:
 ```
 User clicks "Submit" → DB write → Done
 ```
 
-**New (On-Chain - 2-5 sec)**:
+**New (on-chain — 2-5 sec)**:
 ```
 User clicks "Submit"
     → Wallet popup (sign transaction)
@@ -420,7 +306,7 @@ User clicks "Submit"
 
 **Optional**: Sponsor gas for new users via Privy paymaster.
 
-### Architecture Diagram
+### Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -458,56 +344,29 @@ User clicks "Submit"
 | `src/hooks/use-play-balance.ts` | Balance display hook | Small |
 | `src/db/actions/contract-sync-actions.ts` | Sync on-chain events → DB | Medium |
 
-### Modified Files
-
-| File | Changes | Effort |
-|------|---------|--------|
-| `src/features/app/components/submission-form.tsx` | Contract write instead of DB | Medium |
-| `src/features/app/components/vote-tab.tsx` | Contract write instead of DB | Medium |
-| `src/features/app/components/review-form.tsx` | Trigger `rewardReview()` after DB save | Small |
-| `src/db/actions/cycle-actions.ts` | Call `declareWinner()` on-chain | Small |
-| `src/features/app/components/profile-view.tsx` | Show $PLAY balance + tx history | Medium |
-| Header/Layout | Show $PLAY balance | Small |
-
-### Environment Variables
+### Environment Variables to Add
 
 ```
 PLAY_TOKEN_ADDRESS=0x...         # Your $PLAY ERC-20 contract
 PLAYGROUP_CONTRACT_ADDRESS=0x... # Deployed PlaygroupCore contract
 ```
 
-### AUX Code Patterns to Follow
+### What You Need to Provide Before Starting
 
-From AUX's docs, key patterns:
+| Item | Description |
+|------|-------------|
+| **$PLAY Token Address** | Your deployed ERC-20 contract on Base |
+| **Token Supply** | Confirm 1B supply |
+| **Deployment Decision** | Who deploys PlaygroupCore? (I write it, you deploy) |
 
-```typescript
-// Client setup (like AUX)
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+### Deployment Checklist
 
-const PLAYGROUP_ADDRESS = '0x...';
-const client = createPublicClient({
-  chain: base,
-  transport: http('https://mainnet.base.org')
-});
-
-// Read album count
-const count = await client.readContract({
-  address: PLAYGROUP_ADDRESS,
-  abi: playgroupAbi,
-  functionName: 'getAlbumCount'
-});
-
-// Watch for new submissions
-client.watchContractEvent({
-  address: PLAYGROUP_ADDRESS,
-  abi: playgroupAbi,
-  eventName: 'AlbumSubmitted',
-  onLogs: (logs) => {
-    // Sync to database
-  }
-});
-```
+1. [ ] User provides $PLAY token address
+2. [ ] Deploy PlaygroupCore contract on Base
+3. [ ] Transfer $PLAY supply to contract (for rewards)
+4. [ ] Set environment variables
+5. [ ] Update frontend to use contract
+6. [ ] Test on Base testnet first
 
 ### Edge Cases
 
@@ -520,34 +379,25 @@ client.watchContractEvent({
 | Network congestion | Show pending state, wait |
 | Contract paused | Show maintenance message |
 
-### Deployment Checklist
-
-1. [ ] User provides $PLAY token address
-2. [ ] Deploy PlaygroupCore contract on Base
-3. [ ] Transfer $PLAY supply to contract (for rewards)
-4. [ ] Set environment variables
-5. [ ] Update frontend to use contract
-6. [ ] Test on Base testnet first
-
 ---
 
 ## Implementation Order
 
 ```
-#1 One-Week Cycles (15-20 min) ✅ DONE
+#1 One-Week Cycles (15-20 min)     ✅ DONE
          ↓
-#2 User Profile Page (45-60 min) ✅ DONE
+#2 User Profile Page (45-60 min)   ✅ DONE
          ↓
-#3 Community Buzz (30-45 min) ✅ DONE
+#3 Community Buzz (30-45 min)      ✅ DONE
          ↓
 #5 Universal Access / Privy (3-4 hrs) ✅ DONE
          ↓
-#6 $PLAY On-Chain (5-7 hrs) ← Replaces #4 entirely
+#6 Security & Reliability Audit    ✅ DONE
+         ↓
+#7 $PLAY On-Chain (5-7 hrs)        ← NEXT
 ```
 
-**Recommended next**: #6 ($PLAY On-Chain)
-
-**Total Estimated Time**: ~5-7 hours remaining
+**Recommended next**: #7 ($PLAY On-Chain)
 
 | Feature | Why This Order | Status |
 |---------|----------------|--------|
@@ -555,29 +405,16 @@ client.watchContractEvent({
 | #2 User Profile | Foundation for all user features | ✅ Done |
 | #3 Community Buzz | Farcaster engagement integration | ✅ Done |
 | #5 Privy | Establishes wallet addresses for all users | ✅ Done |
-| #6 $PLAY On-Chain | Requires wallets from #5 | Next |
+| #6 Security Audit | Production hardening | ✅ Done |
+| #7 $PLAY On-Chain | Requires wallets from #5 | Next |
 
-> **Note**: Feature #4 (Point Economy - database) is **superseded** by #6. No need to build DB points if going on-chain.
-
----
-
-## What You Need to Provide
-
-Before implementing Feature #6:
-
-| Item | Description |
-|------|-------------|
-| **$PLAY Token Address** | Your deployed ERC-20 contract on Base |
-| **Token Supply** | Confirm 1B supply |
-| **Deployment Decision** | Who deploys PlaygroupCore? (I write it, you deploy) |
+> **Note**: Feature #4 (Point Economy - database) is **superseded** by #7. No need to build DB points if going on-chain.
 
 ---
 
 ## Future Considerations (Not Yet Scoped)
 
-These items have been mentioned but not fully planned:
-
-- [ ] Auto winner selection cron job (Friday/Thursday EOD)
+- [ ] Auto winner selection cron job (Thursday EOD)
 - [ ] Genre filtering in submissions/archive
 - [ ] Year selector for archive browsing
 - [ ] Losing album "second chance" (persist for one more cycle)
@@ -599,8 +436,10 @@ These items have been mentioned but not fully planned:
 | 2025-02-08 | **✅ Implemented Feature #2: User Profile Page** |
 | 2025-02-08 | **✅ Implemented Feature #3: Community Buzz** (Farcaster cast search) |
 | 2025-02-08 | Renumbered features: Point Economy → #4, Privy → #5, $PLAY → #6 |
-| 2025-02-08 | **✅ Implemented Feature #5: Universal Access (Privy)** - Added users table, unified auth hook, login modal, dual identity support (FID + userId) |
-| 2025-02-08 | **✅ Privy Credentials Configured** - Universal login active in production (email, Google, Farcaster) |
+| 2025-02-08 | **✅ Implemented Feature #5: Universal Access (Privy)** - Added users table, unified auth hook, login modal, dual identity support |
+| 2025-02-08 | **✅ Privy Credentials Configured** - Universal login active (email, Google, Farcaster) |
+| 2026-02-28 | **✅ Security & Reliability Audit (#6)** - Race conditions, N+1 queries, admin auth, DB constraints, type safety |
+| 2026-02-28 | Renumbered $PLAY On-Chain to #7 |
 
 ---
 
@@ -615,15 +454,10 @@ These items have been mentioned but not fully planned:
 | User Profiles | ✅ Complete |
 | Community Buzz (Farcaster casts) | ✅ Complete |
 | Universal Login (Privy) | ✅ Complete + Configured |
-| $PLAY Token On-Chain | ⏳ Planned (optional) |
-
-**Environment Variables Configured:**
-- `NEXT_PUBLIC_PRIVY_APP_ID` ✅
-- `PRIVY_APP_SECRET` ✅
-- `DATABASE_URL` ✅
-- `NEYNAR_API_KEY` ✅
+| Security & Reliability (audit fixes) | ✅ Complete |
+| $PLAY Token On-Chain | ⏳ Planned |
 
 **Login Methods Available:**
-- 📱 Farcaster (native mini app)
-- 📧 Email (magic link via Privy)
-- 🔵 Google (OAuth via Privy)
+- Farcaster (native mini app)
+- Email (magic link via Privy)
+- Google (OAuth via Privy)

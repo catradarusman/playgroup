@@ -1,7 +1,7 @@
 # Playgroup - Wiring Plan
 
 > **Status**: ✅ All Features Complete - Ready to Publish
-> **Last Updated**: 2025-02-08
+> **Last Updated**: 2026-02-28
 > **Cycle Duration**: 1 week (52 albums/year)
 > **Universal Login**: ✅ Privy Configured
 
@@ -9,198 +9,298 @@
 
 ## Features Overview
 
-| Feature              | Type     | Status      | Notes                           |
-| -------------------- | -------- | ----------- | ------------------------------- |
-| Cycles & Albums      | database | ✅ Complete | Auto-creates first cycle        |
-| Submissions & Voting | database | ✅ Complete | Full validation rules           |
-| Reviews              | database | ✅ Complete | Stats auto-update               |
-| Album Metadata       | external | ✅ Complete | Deezer API (no auth needed)     |
-| User Identity        | social   | ✅ Complete | Unified auth (FC + Privy)       |
-| Share Buttons        | sharing  | ✅ Complete | 3 personalized share types      |
-| User Profiles        | social   | ✅ Complete | Header icon, clickable usernames |
-| Community Buzz       | social   | ✅ Complete | Farcaster cast search for albums |
-| Universal Access     | auth     | ✅ Complete | Privy (email/Google) + Farcaster |
+| Feature              | Type     | Status      | Notes                                    |
+| -------------------- | -------- | ----------- | ---------------------------------------- |
+| Cycles & Albums      | database | ✅ Complete | Auto-creates first cycle                 |
+| Submissions & Voting | database | ✅ Complete | Atomic transactions, DB constraints      |
+| Reviews              | database | ✅ Complete | Stats auto-update inside transaction     |
+| Album Metadata       | external | ✅ Complete | Deezer API (no auth needed)              |
+| User Identity        | social   | ✅ Complete | Unified auth (FC + Privy)                |
+| Share Buttons        | sharing  | ✅ Complete | 3 personalized share types               |
+| User Profiles        | social   | ✅ Complete | Header icon, clickable usernames         |
+| Community Buzz       | social   | ✅ Complete | Farcaster cast search for albums         |
+| Universal Access     | auth     | ✅ Complete | Privy (email/Google) + Farcaster         |
 
 ---
 
 ## Database Schema
 
-### `cycles` Table
+All tables are defined in `src/db/schema.ts`.
+
+### `users` Table
+
+Unified identity for Farcaster and Privy users. All other tables reference `users.id`.
+
 ```sql
-id              UUID PRIMARY KEY
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+fid             INTEGER                      -- Farcaster ID (null for Privy-only users)
+privyId         TEXT                         -- Privy ID (null for FC-only users)
+walletAddress   TEXT                         -- FC embedded wallet or Privy smart wallet
+email           TEXT                         -- Privy users only
+username        TEXT NOT NULL                -- FC @username or email prefix
+displayName     TEXT NOT NULL                -- Full display name
+pfpUrl          TEXT                         -- FC PFP or DiceBear generated avatar
+authProvider    TEXT NOT NULL                -- 'farcaster' | 'privy'
+createdAt       TIMESTAMP DEFAULT NOW()
+updatedAt       TIMESTAMP DEFAULT NOW()
+```
+
+### `cycles` Table
+
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 weekNumber      INTEGER NOT NULL
 year            INTEGER NOT NULL
-phase           TEXT NOT NULL  -- 'voting' | 'listening'
+phase           TEXT NOT NULL                -- 'voting' | 'listening'
 startDate       TIMESTAMP NOT NULL
 endDate         TIMESTAMP NOT NULL
 votingEndsAt    TIMESTAMP NOT NULL
-winnerId        UUID
+winnerId        UUID                         -- references albums.id (FK omitted to avoid circular TS inference)
 createdAt       TIMESTAMP DEFAULT NOW()
 ```
 
+> **Note on `winnerId` FK**: A foreign key reference to `albums.id` was intentionally omitted because `cycles` and `albums` mutually reference each other, which causes TypeScript circular type inference errors with Drizzle. The application-layer reference is maintained correctly; only the Drizzle schema annotation is absent.
+
 ### `albums` Table
+
 ```sql
-id                   UUID PRIMARY KEY
+id                   UUID PRIMARY KEY DEFAULT gen_random_uuid()
 spotifyId            TEXT NOT NULL
 title                TEXT NOT NULL
 artist               TEXT NOT NULL
 coverUrl             TEXT NOT NULL
 spotifyUrl           TEXT NOT NULL
-tracks               JSONB  -- string[] from Deezer
-cycleId              UUID NOT NULL
-submittedByFid       INTEGER NOT NULL
+tracks               JSONB                    -- string[] of track names cached from Deezer
+cycleId              UUID NOT NULL REFERENCES cycles(id)
+submittedByFid       INTEGER                  -- Legacy: nullable for new Privy users
+submittedByUserId    UUID REFERENCES users(id) -- New: unified user ID
 submittedByUsername  TEXT NOT NULL
-status               TEXT NOT NULL  -- 'voting' | 'selected' | 'lost'
+status               TEXT NOT NULL            -- 'voting' | 'selected' | 'lost'
 avgRating            REAL
 totalReviews         INTEGER DEFAULT 0
 mostLovedTrack       TEXT
 mostLovedTrackVotes  INTEGER DEFAULT 0
 createdAt            TIMESTAMP DEFAULT NOW()
+
+-- Constraints:
+UNIQUE INDEX (cycleId, spotifyId)                          -- no duplicate submissions per cycle
+UNIQUE INDEX (cycleId, status) WHERE status = 'selected'   -- only one winner per cycle
 ```
 
 ### `votes` Table
+
 ```sql
-id        UUID PRIMARY KEY
-albumId   UUID NOT NULL
-voterFid  INTEGER NOT NULL
+id        UUID PRIMARY KEY DEFAULT gen_random_uuid()
+albumId   UUID NOT NULL REFERENCES albums(id)
+voterFid  INTEGER                              -- Legacy: nullable for Privy users
+voterId   UUID REFERENCES users(id)            -- New: unified user ID
 createdAt TIMESTAMP DEFAULT NOW()
+
+-- Constraints:
+UNIQUE INDEX (albumId, voterId)  WHERE voterId  IS NOT NULL  -- one vote per user per album
+UNIQUE INDEX (albumId, voterFid) WHERE voterFid IS NOT NULL  -- one vote per FID per album (legacy)
 ```
 
 ### `reviews` Table
+
 ```sql
-id               UUID PRIMARY KEY
-albumId          UUID NOT NULL
-reviewerFid      INTEGER           -- Legacy, nullable for Privy users
-reviewerUserId   UUID              -- Unified user ID
+id               UUID PRIMARY KEY DEFAULT gen_random_uuid()
+albumId          UUID NOT NULL REFERENCES albums(id)
+reviewerFid      INTEGER                      -- Legacy: nullable for Privy users
+reviewerId       UUID REFERENCES users(id)    -- New: unified user ID
 reviewerUsername TEXT NOT NULL
 reviewerPfp      TEXT
-rating           INTEGER NOT NULL  -- 1-5
-reviewText       TEXT NOT NULL     -- min 50 chars
+rating           INTEGER NOT NULL             -- 1-5
+reviewText       TEXT NOT NULL                -- min 50 chars (enforced in application)
 favoriteTrack    TEXT
 hasListened      BOOLEAN DEFAULT FALSE
 createdAt        TIMESTAMP DEFAULT NOW()
-```
 
-### `users` Table (Privy Integration)
-```sql
-id              UUID PRIMARY KEY
-fid             INTEGER           -- Farcaster ID (nullable - only FC users)
-privyId         TEXT              -- Privy ID (nullable - only Privy users)
-walletAddress   TEXT              -- Always present (FC or Privy wallet)
-email           TEXT              -- Privy users only
-username        TEXT NOT NULL     -- FC username OR email prefix
-displayName     TEXT NOT NULL     -- Display name
-pfpUrl          TEXT              -- FC PFP OR DiceBear avatar
-authProvider    TEXT NOT NULL     -- 'farcaster' | 'privy'
-createdAt       TIMESTAMP DEFAULT NOW()
-updatedAt       TIMESTAMP DEFAULT NOW()
+-- Constraints:
+CHECK (rating >= 1 AND rating <= 5)
+UNIQUE INDEX (albumId, reviewerId)   WHERE reviewerId   IS NOT NULL  -- one review per user per album
+UNIQUE INDEX (albumId, reviewerFid)  WHERE reviewerFid  IS NOT NULL  -- one review per FID per album (legacy)
 ```
 
 ---
 
 ## Server Actions
 
-### Cycle Actions (`src/db/actions/cycle-actions.ts`)
-- `getCurrentCycle()` - Get active cycle
-- `getCycleWithCountdown()` - Get cycle with computed countdown
-- `getOrCreateCurrentCycle()` - Auto-create Week 1 if none exists
-- `getCycleAlbum(cycleId)` - Get winning album for cycle
-- `getPastAlbums(year)` - Get all past winners
-- `getAlbumById(albumId)` - Get album with full stats
-- `getListenerCount(cycleId)` - Count unique reviewers
-- `createCycle(data)` - Create new cycle
-- `updateCyclePhase(cycleId, phase, winnerId)` - Update phase
+All actions live in `src/db/actions/`. They run server-side only (`'use server'`).
 
-### Submission Actions (`src/db/actions/submission-actions.ts`)
-- `submitAlbum(data)` - Submit album with metadata + auto-vote for submitter
-- `getSubmissions(cycleId)` - Get all submissions with votes
-- `getSubmissionsWithUserVotes(cycleId, fid)` - Include user's vote status
-- `getUserSubmissionCount(fid, cycleId)` - Check 3-per-cycle limit
-- `castVote(albumId, fid)` - Cast vote (one per album)
-- `selectWinner(cycleId)` - Auto-select winner by votes
+### Cycle Actions (`cycle-actions.ts`)
 
-### Review Actions (`src/db/actions/review-actions.ts`)
-- `submitReview(data)` - Submit review with rating (supports fid or userId)
-- `getAlbumReviews(albumId)` - Get all reviews for album
-- `getUserReview(albumId, fid?, userId?)` - Check if user reviewed (dual identity)
-- `updateAlbumStats(albumId)` - Recalculate stats
+| Function | Description |
+|----------|-------------|
+| `getCurrentCycle()` | Get the active cycle or null |
+| `getCycleWithCountdown(cycleId)` | Get cycle with computed countdown object |
+| `getOrCreateCurrentCycle()` | Get active cycle; auto-creates Week 1 if none exists |
+| `getCycleAlbum(cycleId)` | Get the winning album for a cycle |
+| `getPastAlbums(year)` | Get all past winners for a year (single JOIN query) |
+| `getAlbumById(albumId)` | Get album with full stats (single JOIN query) |
+| `getListenerCount(cycleId)` | Count unique reviewers for a cycle |
+| `createCycle(data)` | Insert a new cycle record |
+| `updateCyclePhase(cycleId, phase, winnerId?)` | Update cycle phase and optionally set winner |
+| `autoTransitionToListening(cycleId)` | Transition voting → listening with winner selection; wrapped in `db.transaction()` with idempotency check |
 
-### Profile Actions (`src/db/actions/profile-actions.ts`)
-- `getProfileByFid(fid)` - Get complete profile data (submissions, reviews, stats)
-- `getUserInfoByFid(fid)` - Get basic user info (username, pfp) from DB
+**Important**: `autoTransitionToListening` is idempotent — it re-checks the cycle's current phase inside the transaction and returns early if already transitioned. Safe to call multiple times or from concurrent requests.
 
-### User Actions (`src/db/actions/user-actions.ts`)
-- `getOrCreateFarcasterUser(fid, username, pfpUrl, walletAddress)` - Create/get FC user
-- `getOrCreatePrivyUser(privyId, email, walletAddress)` - Create/get Privy user
-- `getUserByFid(fid)` - Lookup by Farcaster ID
-- `getUserByPrivyId(privyId)` - Lookup by Privy ID
-- `getUserByWalletAddress(address)` - Lookup for account linking
+### Submission Actions (`submission-actions.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `submitAlbum(data)` | Submit album + auto-vote; wrapped in `db.transaction()` |
+| `getSubmissions(cycleId)` | All voting submissions with vote counts (single LEFT JOIN + GROUP BY) |
+| `getSubmissionsWithUserVotes(cycleId, fid?, userId?)` | Submissions with per-user vote status |
+| `getUserSubmissionCount(cycleId, fid?, userId?)` | User's submission count for the cycle |
+| `castVote(albumId, fid?, userId?)` | Cast a vote; wrapped in `db.transaction()` |
+| `selectWinner(cycleId)` | Auto-select winner by vote count; tiebreaker = earliest submission |
+
+**Transaction semantics**:
+- `submitAlbum`: past-winner check → duplicate check → album INSERT → auto-vote INSERT, all atomic
+- `castVote`: album status check → existing vote check → vote INSERT, all atomic
+- On unique index violation (concurrent request wins race), both return a user-friendly error instead of throwing
+
+**Return type pattern**: All functions return `{ success: true as const, ... }` or `{ success: false as const, error: string }` so TypeScript can narrow the discriminated union correctly.
+
+### Review Actions (`review-actions.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `submitReview(data)` | Submit review; wrapped in `db.transaction()` |
+| `getAlbumReviews(albumId)` | All reviews for an album, ordered newest first |
+| `getUserReview(albumId, fid?, userId?)` | Get a specific user's review, or null |
+| `getAlbumStats(albumId)` | Get album avg rating, total reviews, most loved track |
+
+**Transaction semantics**:
+- `submitReview`: duplicate check → review INSERT → `updateAlbumStats()`, all atomic
+- `updateAlbumStats` accepts an optional Drizzle transaction client so it can run inside an existing transaction without starting a nested one
+
+**Avatar fallback**: Reviews from Privy users with no Farcaster PFP use DiceBear seeded from `reviewerId ?? reviewerFid ?? 'anon'` to guarantee a non-broken image.
+
+### Profile Actions (`profile-actions.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `getProfileByFid(fid)` | Full profile: submissions, reviews, stats, member since |
+| `getUserInfoByFid(fid)` | Basic user info (username, pfp) for other users' profile views |
+
+### User Actions (`user-actions.ts`)
+
+| Function | Description |
+|----------|-------------|
+| `getOrCreateFarcasterUser(data)` | Upsert user record for FC login |
+| `getOrCreatePrivyUser(data)` | Upsert user record for Privy login |
+| `getUserByFid(fid)` | Lookup user by Farcaster ID |
+| `getUserByPrivyId(privyId)` | Lookup user by Privy ID |
+| `getUserByWalletAddress(address)` | Lookup for account linking (FC + Privy wallet match) |
 
 ---
 
 ## React Hooks
 
-### `src/hooks/use-cycle.ts`
-- `useCycle()` - Current cycle with live countdown
-- `useCurrentAlbum(cycleId)` - Current/winning album
-- `usePastAlbums(year)` - Archive albums list
-- `useListenerCount(cycleId)` - Active listener count
+All hooks live in `src/hooks/`. They call server actions and manage loading/error state.
 
-### `src/hooks/use-submissions.ts`
-- `useSubmissions(cycleId, fid)` - Submissions with vote status
-- `useUserSubmissionCount(fid, cycleId)` - User's submission count
-- `useSubmitAlbum()` - Mutation for submitting
-- `useVote()` - Mutation for voting
+### `use-auth.ts` — Unified Authentication
 
-### `src/hooks/use-reviews.ts`
-- `useReviews(albumId)` - Reviews for an album
-- `useUserReview(albumId, fid?, userId?)` - Check user's review (dual identity)
-- `useSubmitReview()` - Mutation for submitting (supports fid or userId)
+```ts
+useAuth() → UseAuthResult
+```
 
-### `src/hooks/use-profile.ts`
-- `useProfile(fid)` - Full profile data (submissions, reviews, stats, memberSince)
-- `useUserInfo(fid)` - Basic user info lookup for other users' profiles
+Priority order:
+1. If in Farcaster mini app context → use Farcaster identity
+2. If logged in via Privy → use Privy identity (with optional linked Farcaster)
+3. Otherwise → not authenticated
 
-### `src/hooks/use-album-buzz.ts`
-- `useAlbumBuzz(title, artist)` - Search Farcaster casts mentioning album
-- Returns: casts[], count, isLoading, hasMore, loadMore()
+Returns:
+```ts
+{
+  user: UnifiedUser | null,   // null if not logged in
+  isLoading: boolean,
+  isInitialized: boolean,
+  isAuthenticated: boolean,
+  isFarcasterUser: boolean,
+  isPrivyUser: boolean,
+  login: () => void,          // opens Privy modal
+  logout: () => Promise<void>,
+  privy: { ready, authenticated, login, logout }  // raw Privy state
+}
+```
 
-### `src/hooks/use-auth.ts` (Unified Authentication)
-- `useAuth()` - Unified auth hook for FC + Privy
-- Returns: user, isLoading, isAuthenticated, isFarcasterUser, isPrivyUser, login, logout
-- Priority: Farcaster (if in mini app) → Privy → Not authenticated
-- User object includes: id, fid?, username, displayName, pfpUrl, authProvider
+`UnifiedUser` shape:
+```ts
+{
+  id: string,             // DB UUID — use this for all DB references
+  username: string,
+  displayName: string,
+  pfpUrl: string | null,
+  authProvider: 'farcaster' | 'privy',
+  fid: number | null,     // null for Privy-only users
+  privyId: string | null, // null for FC-only users
+  email: string | null,
+  walletAddress: string | null,
+  createdAt: Date,
+}
+```
+
+**Always use `user.id` (not `user.fid`) for DB writes** unless you specifically need the legacy FID path.
+
+### `use-cycle.ts`
+- `useCycle()` — Current cycle with live countdown
+- `useCurrentAlbum(cycleId)` — Current or winning album
+- `usePastAlbums(year)` — Archive albums list
+- `useListenerCount(cycleId)` — Unique reviewer count
+
+### `use-submissions.ts`
+- `useSubmissions(cycleId, fid?, userId?)` — Submissions with per-user vote status
+- `useUserSubmissionCount(cycleId, fid?, userId?)` — User's submission count
+- `useSubmitAlbum()` — Mutation for submitting an album
+- `useVote()` — Mutation for casting a vote
+
+### `use-reviews.ts`
+- `useReviews(albumId)` — Reviews for an album
+- `useUserReview(albumId, fid?, userId?)` — Whether current user reviewed this album
+- `useSubmitReview()` — Mutation for submitting a review
+
+### `use-profile.ts`
+- `useProfile(fid)` — Full profile data (submissions, reviews, stats, memberSince)
+- `useUserInfo(fid)` — Basic user info for viewing other users' profiles
+
+### `use-album-buzz.ts`
+- `useAlbumBuzz(title, artist)` — Farcaster casts mentioning the album
+- Returns: `{ casts[], count, isLoading, hasMore, loadMore() }`
 
 ---
 
 ## External API
 
 ### Deezer API (`src/lib/deezer.ts`)
-- `searchAlbum(query)` - Search for albums
-- `getAlbumById(id)` - Get album details
-- `fetchAlbumMetadata(query)` - Returns: title, artist, coverUrl, tracks[]
 
-**API Endpoint**: `GET /api/deezer/search?q=<query>`
+Proxied through `/api/deezer/search?q=<query>` to avoid CORS.
 
-No authentication required - Deezer API is public.
+- `searchAlbum(query)` — Search for albums by title/artist
+- `getAlbumById(id)` — Get album details
+- `fetchAlbumMetadata(query)` — Returns `{ title, artist, coverUrl, tracks[] }`
+
+No authentication required — Deezer's API is public.
 
 ---
 
 ## Component Structure
 
-| Component              | Location                                      | Data Source        |
-| ---------------------- | --------------------------------------------- | ------------------ |
-| `MiniApp`              | `src/features/app/`                           | useFarcasterUser, profile state |
-| `NowPlayingTab`        | `src/features/app/components/`                | useCycle, useCurrentAlbum |
-| `VoteTab`              | `src/features/app/components/`                | useSubmissions, useVote |
-| `ArchiveTab`           | `src/features/app/components/`                | usePastAlbums |
-| `ProfileView`          | `src/features/app/components/`                | useProfile, useUserInfo |
-| `SubmissionForm`       | `src/features/app/components/`                | Deezer API, useSubmitAlbum |
-| `AlbumDetailView`      | `src/features/app/components/`                | useReviews, AlbumBuzzSection |
-| `ReviewForm`           | `src/features/app/components/`                | useSubmitReview |
-| `AlbumBuzzSection`     | `src/features/app/components/`                | useAlbumBuzz (Neynar cast search) |
-| `CycleStatusBanner`    | `src/features/app/components/`                | Props from parent |
-| `HowItWorks`           | `src/features/app/components/`                | Static content |
+| Component              | Location                                        | Data Source                        |
+| ---------------------- | ----------------------------------------------- | ---------------------------------- |
+| `MiniApp`              | `src/features/app/mini-app.tsx`                 | useAuth, profile state             |
+| `NowPlayingTab`        | `src/features/app/components/`                  | useCycle, useCurrentAlbum          |
+| `VoteTab`              | `src/features/app/components/`                  | useSubmissions, useVote            |
+| `ArchiveTab`           | `src/features/app/components/`                  | usePastAlbums                      |
+| `ProfileView`          | `src/features/app/components/`                  | useProfile, useUserInfo            |
+| `SubmissionForm`       | `src/features/app/components/`                  | Deezer API, useSubmitAlbum         |
+| `AlbumDetailView`      | `src/features/app/components/`                  | useReviews, AlbumBuzzSection       |
+| `ReviewForm`           | `src/features/app/components/`                  | useSubmitReview                    |
+| `AlbumBuzzSection`     | `src/features/app/components/`                  | useAlbumBuzz (Neynar cast search)  |
+| `CycleStatusBanner`    | `src/features/app/components/`                  | Props from parent                  |
+| `HowItWorks`           | `src/features/app/components/`                  | Static content                     |
 
 ---
 
@@ -208,53 +308,55 @@ No authentication required - Deezer API is public.
 
 ### Share Types
 
-| Type      | Location        | Data                              |
-| --------- | --------------- | --------------------------------- |
-| `album`   | Now Playing Tab | albumTitle, artist, weekNumber    |
-| `review`  | Album Detail    | albumTitle, avgRating, reviews    |
-| `journey` | Archive Tab     | year, albums, reviews, avgRating  |
+| Type      | Trigger          | Data                              |
+| --------- | ---------------- | --------------------------------- |
+| `album`   | Now Playing Tab  | albumTitle, artist, weekNumber    |
+| `review`  | Album Detail     | albumTitle, avgRating, reviews    |
+| `journey` | Archive Tab      | year, albums, reviews, avgRating  |
 
 ### Share Image Route
-`src/app/api/share/image/[type]/route.tsx`
+
+`src/app/api/share/image/[type]/route.tsx` — Generates OG images for each share type.
 
 ---
 
 ## Validation Rules
 
-### Submissions
-- ✅ Max 3 per cycle per user
-- ✅ No duplicate Spotify IDs in same cycle
-- ✅ No past winners (status='selected')
+### Submissions (enforced in `submitAlbum`)
+- Max 3 per cycle per user
+- No duplicate Spotify IDs in same cycle (application check + DB unique index)
+- No past winners (`status = 'selected'`)
+- Duplicate-check + INSERT is atomic (single transaction)
 
-### Voting
-- ✅ One vote per album per user
-- ✅ No un-voting
-- ✅ Only albums in 'voting' status
-- ✅ Auto-vote on submission (submitter starts with 1 vote)
+### Voting (enforced in `castVote`)
+- One vote per album per user (application check + DB unique index)
+- No un-voting
+- Only albums with `status = 'voting'`
+- Authentication required (must have `fid` or `userId`)
+- Existence check + INSERT is atomic (single transaction)
 
-### Reviews
-- ✅ One review per album per user
-- ✅ Rating must be 1-5
-- ✅ Text must be 50+ characters
-- ✅ Auto-updates album stats on submit
+### Reviews (enforced in `submitReview`)
+- One review per album per user (application check + DB unique index)
+- Rating must be 1-5 (application check + DB CHECK constraint)
+- Text must be 50+ characters
+- Review INSERT + `updateAlbumStats` is atomic (single transaction)
 
 ---
 
 ## Key Implementation Notes
 
-1. **Auto-Create Cycle**: `getOrCreateCurrentCycle()` ensures a cycle exists on first load
-2. **Deezer vs Spotify**: Using Deezer for metadata (no API key wait), Spotify links for playback
-3. **No Mock Data**: All components use real database, show empty states when no data
-4. **Loading States**: All tabs show skeleton loaders while fetching
-5. **Unified Auth**: All user actions use `useAuth()` hook supporting both Farcaster and Privy users
-6. **Dual Identity**: Actions accept both `fid` (legacy) and `userId` (new) for backwards compatibility
-7. **Auto-Vote**: When user submits album, they automatically vote for it (starts with 1 vote)
-8. **Typography**: Outfit (geometric sans-serif) for UI, JetBrains Mono for code/numbers
-9. **User Profiles**: Access via header avatar icon, clickable usernames throughout app
-10. **Profile Stats**: Submissions, wins, votes received, reviews, avg rating given, member since
-11. **Community Buzz**: Real Farcaster cast search replaces hardcoded listener count; uses Neynar `useCastSearch` hook with hybrid mode for best results
-12. **Privy Integration**: Lazy-loaded PrivyProvider, DiceBear avatars for non-FC users, email prefix usernames
-13. **Account Linking**: Users with matching wallet addresses are automatically linked (FC + Privy)
+1. **Dual identity**: All actions accept `fid` (legacy Farcaster) and `userId` (new unified ID). Never assume `fid` is present; always check `userId` first.
+2. **Atomic writes**: Every check-then-write operation runs inside `db.transaction()`. DB-level unique indexes provide a last-resort safety net for concurrent requests.
+3. **N+1 free**: Vote and review counts are always fetched with `LEFT JOIN + GROUP BY`, not per-row queries. Use `getTableColumns()` from `drizzle-orm` when spreading all columns in a JOIN.
+4. **Discriminated unions**: Server action return types use `success: true as const` / `success: false as const` so TypeScript can narrow them after `if (!result.success)` checks.
+5. **Auto-Create Cycle**: `getOrCreateCurrentCycle()` ensures a cycle always exists — no manual setup required on first deploy.
+6. **Deezer vs Spotify**: Deezer is used for album metadata (no API key needed). Spotify URLs are stored for user-side playback links only.
+7. **No mock data**: All components use real database data and show proper empty states.
+8. **Loading states**: All tabs use skeleton loaders while data is fetching.
+9. **DiceBear avatars**: Privy users with no Farcaster PFP get `https://api.dicebear.com/9.x/lorelei/svg?seed=<userId>`.
+10. **Account linking**: Users with matching wallet addresses are automatically linked across FC and Privy.
+11. **Community Buzz**: Neynar `useCastSearch` hook in `hybrid` mode with `algorithmic` sort for best relevance.
+12. **Admin security**: `/api/admin/reset-cycle` requires `Authorization: Bearer <ADMIN_SECRET>` — returns 401 otherwise.
 
 ---
 
@@ -271,8 +373,8 @@ No authentication required - Deezer API is public.
 | Monday           | New Cycle  | Repeat                                  |
 
 **Cycle Configuration** (in `getOrCreateCurrentCycle()`):
-- Voting period: 4 days (Mon-Thu)
-- Listening period: 3 days (Fri-Sun)
+- Voting period: 4 days (Mon–Thu)
+- Listening period: 3 days (Fri–Sun)
 - Total cycle: 7 days
 - Albums per year: 52
 
@@ -280,14 +382,26 @@ No authentication required - Deezer API is public.
 
 ## Environment Variables
 
-| Variable                    | Required | Status | Purpose                              |
-| --------------------------- | -------- | ------ | ------------------------------------ |
-| `DATABASE_URL`              | Yes      | ✅     | Neon PostgreSQL connection           |
-| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | ✅     | Privy app ID for universal login     |
-| `PRIVY_APP_SECRET`          | Yes      | ✅     | Privy app secret                     |
-| `NEYNAR_API_KEY`            | Yes      | ✅     | Neynar SDK (auto-configured)         |
+| Variable                    | Required | Purpose                                    |
+| --------------------------- | -------- | ------------------------------------------ |
+| `DATABASE_URL`              | Yes      | Neon PostgreSQL connection string          |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | Privy app ID for universal login           |
+| `PRIVY_APP_SECRET`          | Yes      | Privy app secret                           |
+| `NEYNAR_API_KEY`            | Yes      | Neynar SDK for Farcaster cast search       |
+| `ADMIN_SECRET`              | Yes      | Bearer token for admin API endpoints       |
+| `COINGECKO_API_KEY`         | No       | CoinGecko API key (optional, demo feature) |
 
-**All required credentials are configured. App is production-ready.**
+Validated at startup in `src/config/private-config.ts` using Zod. App will fail to start if required variables are missing.
+
+---
+
+## API Routes
+
+| Route | Method | Auth | Purpose |
+|-------|--------|------|---------|
+| `/api/deezer/search` | GET | None | Proxy Deezer album search (avoids CORS) |
+| `/api/share/image/[type]` | GET | None | Generate OG share images |
+| `/api/admin/reset-cycle` | GET | Bearer token | Force-create a new voting cycle |
 
 ---
 
@@ -297,30 +411,31 @@ No authentication required - Deezer API is public.
 
 | File | Purpose |
 |------|---------|
-| `src/db/schema.ts` | Database schema (5 tables) |
-| `src/db/actions/cycle-actions.ts` | Cycle management |
-| `src/db/actions/submission-actions.ts` | Album submission + voting |
-| `src/db/actions/review-actions.ts` | Review system |
+| `src/db/schema.ts` | All table definitions with constraints |
+| `src/db/actions/cycle-actions.ts` | Cycle management + winner selection |
+| `src/db/actions/submission-actions.ts` | Album submission + voting (atomic) |
+| `src/db/actions/review-actions.ts` | Review submission + album stats (atomic) |
 | `src/db/actions/profile-actions.ts` | User profile queries |
 | `src/db/actions/user-actions.ts` | Unified user identity (FC + Privy) |
+| `src/config/private-config.ts` | Zod-validated server env vars |
 
 ### Hooks
 
 | File | Purpose |
 |------|---------|
-| `src/hooks/use-cycle.ts` | Cycle state + countdown |
+| `src/hooks/use-auth.ts` | Unified auth (FC + Privy), UnifiedUser type |
+| `src/hooks/use-cycle.ts` | Cycle state + live countdown |
 | `src/hooks/use-submissions.ts` | Submissions + voting mutations |
 | `src/hooks/use-reviews.ts` | Review queries + mutations |
 | `src/hooks/use-profile.ts` | User profile data |
 | `src/hooks/use-album-buzz.ts` | Farcaster cast search |
-| `src/hooks/use-auth.ts` | Unified auth (FC + Privy) |
 
 ### Auth Configuration
 
 | File | Purpose |
 |------|---------|
 | `src/lib/privy.ts` | Privy config (login methods, appearance) |
-| `src/features/app/privy-wrapper.tsx` | PrivyProvider wrapper |
+| `src/features/app/privy-wrapper.tsx` | PrivyProvider wrapper (lazy-loaded) |
 | `src/features/app/components/login-modal.tsx` | Multi-provider login UI |
 
 ### Components
@@ -332,7 +447,7 @@ No authentication required - Deezer API is public.
 | `src/features/app/components/vote-tab.tsx` | Submissions + voting |
 | `src/features/app/components/archive-tab.tsx` | The 52 archive grid |
 | `src/features/app/components/profile-view.tsx` | User profile page |
-| `src/features/app/components/submission-form.tsx` | Album submission |
-| `src/features/app/components/review-form.tsx` | Review submission |
+| `src/features/app/components/submission-form.tsx` | Album submission form |
+| `src/features/app/components/review-form.tsx` | Review submission form |
 | `src/features/app/components/album-detail-view.tsx` | Album details + reviews |
 | `src/features/app/components/album-buzz-section.tsx` | Farcaster casts about album |

@@ -1,7 +1,7 @@
 # Playgroup - App Specifications
 
 > **Created**: 2025-02-08
-> **Last Updated**: 2025-02-08
+> **Last Updated**: 2026-02-28
 > **Status**: ✅ Production Ready
 
 ---
@@ -48,24 +48,28 @@
 ### Album Submission
 - ✅ Paste Spotify link → Search Deezer for metadata → Preview → Submit
 - ✅ Auto-vote: submitter's album starts with 1 vote automatically
-- ✅ No duplicates in same cycle
+- ✅ No duplicates in same cycle (enforced in DB + application layer)
 - ✅ No past winners allowed
+- ✅ Max 3 submissions per user per cycle
+- ✅ Submission + auto-vote is atomic (single DB transaction)
 
 ### Voting System
-- ✅ Upvote albums, one vote per album per user
+- ✅ Upvote albums, one vote per album per user (enforced in DB + application layer)
 - ✅ Unlimited total votes allowed
 - ✅ No un-voting (keeps it simple)
-- ✅ Submitter auto-votes for their own album on submission
+- ✅ Vote check + insert is atomic (single DB transaction)
+- ✅ Authentication required to vote
 
 ### Winner Selection
 - ✅ Auto-select highest votes
 - ✅ Tiebreaker: earliest submission timestamp
 
 ### Review System
-- ✅ 1-5 star rating
+- ✅ 1-5 star rating (enforced at DB level via CHECK constraint)
 - ✅ 50+ character minimum review text
 - ✅ Favorite track picker
-- ✅ One review per album per user
+- ✅ One review per album per user (enforced in DB + application layer)
+- ✅ Review insert + album stats update is atomic (single DB transaction)
 
 ### Archive (The 52)
 - ✅ Visual 52-square progress grid
@@ -89,13 +93,26 @@
 
 ### Database Tables
 
-| Table    | Purpose                          |
-| -------- | -------------------------------- |
-| cycles   | 1-week listening cycles          |
-| albums   | Submitted and winning albums     |
-| votes    | User votes on albums             |
-| reviews  | User reviews with ratings        |
+| Table    | Purpose                            |
+| -------- | ---------------------------------- |
+| kv       | Platform key-value store (built-in)|
 | users    | Unified user identity (FC + Privy) |
+| cycles   | 1-week listening cycles            |
+| albums   | Submitted and winning albums       |
+| votes    | User votes on albums               |
+| reviews  | User reviews with ratings          |
+
+### DB-Level Integrity Constraints
+
+| Table   | Constraint                                              | Purpose                                    |
+| ------- | ------------------------------------------------------- | ------------------------------------------ |
+| albums  | UNIQUE (cycleId, spotifyId)                             | No duplicate submissions in same cycle     |
+| albums  | UNIQUE (cycleId, status) WHERE status = 'selected'      | Only one winner per cycle                  |
+| votes   | UNIQUE (albumId, voterId) WHERE voterId IS NOT NULL      | One vote per user per album (new users)    |
+| votes   | UNIQUE (albumId, voterFid) WHERE voterFid IS NOT NULL   | One vote per FID per album (legacy FC)     |
+| reviews | UNIQUE (albumId, reviewerId) WHERE reviewerId IS NOT NULL| One review per user per album (new users)  |
+| reviews | UNIQUE (albumId, reviewerFid) WHERE reviewerFid IS NOT NULL| One review per FID per album (legacy FC) |
+| reviews | CHECK rating >= 1 AND rating <= 5                       | Valid rating range enforced at DB level    |
 
 ### External APIs
 
@@ -115,7 +132,7 @@
 | **UI Components**        | @neynar/ui                         |
 | **Database**             | Neon PostgreSQL + Drizzle ORM      |
 | **Authentication**       | Farcaster + Privy (unified auth)   |
-| **Platform**             | Web App (FC mini + standalone)     |
+| **Platform**             | Farcaster mini app + standalone web|
 
 ---
 
@@ -134,20 +151,18 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 
 **Recommended next**: #6 ($PLAY On-Chain)
 
-**Total estimated time**: ~5-7 hours for remaining feature
-
 ---
 
 ## Environment Variables
 
-| Variable                    | Required | Purpose                              |
-| --------------------------- | -------- | ------------------------------------ |
-| `DATABASE_URL`              | Yes      | Neon PostgreSQL connection           |
-| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | Privy app ID for universal login     |
-| `PRIVY_APP_SECRET`          | Yes      | Privy app secret                     |
-| `NEYNAR_API_KEY`            | Yes      | Neynar SDK (auto-configured)         |
-
-**Privy Credentials**: Configured ✅ (`cmlp5mcgl007t0ci8otmh3vtg`)
+| Variable                    | Required | Purpose                                    |
+| --------------------------- | -------- | ------------------------------------------ |
+| `DATABASE_URL`              | Yes      | Neon PostgreSQL connection string          |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | Yes      | Privy app ID for universal login           |
+| `PRIVY_APP_SECRET`          | Yes      | Privy app secret                           |
+| `NEYNAR_API_KEY`            | Yes      | Neynar SDK for Farcaster cast search       |
+| `ADMIN_SECRET`              | Yes      | Bearer token for admin API endpoints       |
+| `COINGECKO_API_KEY`         | No       | CoinGecko API key (optional, demo feature) |
 
 ---
 
@@ -171,3 +186,8 @@ See **[roadmap.md](./roadmap.md)** for planned features:
 | 2025-02-08 | **Implemented Community Buzz** (Farcaster cast search, real engagement metrics) |
 | 2025-02-08 | **Implemented Universal Access (Privy)** - Unified auth (FC + email/Google), users table, dual identity support |
 | 2025-02-08 | **Privy Credentials Configured** - Universal login now active in production |
+| 2026-02-28 | **Security & reliability audit fixes** — race conditions, N+1 queries, admin auth, type safety (see wiring-plan.md for details) |
+| 2026-02-28 | Added `ADMIN_SECRET` env var (required for admin endpoints) |
+| 2026-02-28 | `COINGECKO_API_KEY` made optional (was erroneously hardcoded) |
+| 2026-02-28 | Added DB-level unique indexes and check constraints for data integrity |
+| 2026-02-28 | All mutating DB actions wrapped in transactions (atomic check + write) |
