@@ -74,13 +74,22 @@ export function MiniApp() {
 
         {/* Tab content - each fills available space */}
         <TabsContent value="now" className="flex-1 overflow-y-auto p-4 mt-0">
-          <NowPlayingTab onViewProfile={(fid) => setViewingProfile({ fid })} />
+          <NowPlayingTab onViewProfile={(fid, userId) => {
+            if (fid != null) setViewingProfile({ fid });
+            else if (userId) setViewingProfile({ userId });
+          }} />
         </TabsContent>
         <TabsContent value="vote" className="flex-1 overflow-y-auto p-4 mt-0">
-          <VoteTab onViewProfile={(fid) => setViewingProfile({ fid })} />
+          <VoteTab onViewProfile={(fid, userId) => {
+            if (fid != null) setViewingProfile({ fid });
+            else if (userId) setViewingProfile({ userId });
+          }} />
         </TabsContent>
         <TabsContent value="archive" className="flex-1 overflow-y-auto p-4 mt-0">
-          <ArchiveTab onViewProfile={(fid) => setViewingProfile({ fid })} />
+          <ArchiveTab onViewProfile={(fid, userId) => {
+            if (fid != null) setViewingProfile({ fid });
+            else if (userId) setViewingProfile({ userId });
+          }} />
         </TabsContent>
       </Tabs>
     </div>

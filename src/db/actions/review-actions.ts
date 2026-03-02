@@ -101,6 +101,7 @@ export async function getAlbumReviews(albumId: string) {
   return result.map((r) => ({
     id: r.id,
     fid: r.reviewerFid,
+    userId: r.reviewerId,
     user: r.reviewerUsername,
     displayName: r.reviewerUsername,
     // Use reviewerId as seed fallback for Privy users who have no FID

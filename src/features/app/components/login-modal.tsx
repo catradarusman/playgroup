@@ -112,7 +112,10 @@ export function UserButton({
 }) {
   const { user, isAuthenticated, login, isLoading } = useAuth();
 
-  if (isLoading) {
+  // Only show spinner on initial load (not authenticated yet).
+  // During wallet re-sync isLoading is true again but user is already set —
+  // keep showing the profile button so it stays clickable.
+  if (isLoading && !isAuthenticated) {
     return (
       <div className="w-8 h-8 rounded-full bg-gray-700 animate-pulse" />
     );

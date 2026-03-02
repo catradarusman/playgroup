@@ -8,7 +8,7 @@ import { useSubmissions, useVote, useUserSubmissionCount } from '@/hooks/use-sub
 import { SubmissionForm } from './submission-form';
 
 interface VoteTabProps {
-  onViewProfile?: (fid: number) => void;
+  onViewProfile?: (fid: number | null, userId?: string) => void;
 }
 
 function GenrePills({ genres }: { genres: string[] }) {
@@ -48,7 +48,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
   const { vote, isVoting } = useVote();
 
   // Submission count (enforces 3-per-cycle limit in UI)
-  const { count: submissionCount } = useUserSubmissionCount(
+  const { count: submissionCount, refresh: refreshSubmissionCount } = useUserSubmissionCount(
     cycle?.id ?? null,
     userFid,
     userId
@@ -95,6 +95,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
           onClose={() => {
             setShowSubmitForm(false);
             refreshSubmissions();
+            refreshSubmissionCount();
           }}
           cycleId={cycle?.id ?? null}
           userFid={userFid}
@@ -190,7 +191,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (album.submitterFid != null) onViewProfile?.(album.submitterFid);
+                              onViewProfile?.(album.submitterFid, album.submitterUserId ?? undefined);
                             }}
                             className="text-gray-400 hover:text-white transition-colors"
                           >

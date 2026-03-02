@@ -33,6 +33,7 @@ export interface AlbumData {
   mostLovedTrackVotes: number | null;
   weekNumber: number;
   submittedByFid: number | null;
+  submittedByUserId: string | null;
   submittedByUsername: string;
   tracks: string[] | null;
   genres: string[] | null;
@@ -119,6 +120,7 @@ export function useCurrentAlbum(cycleId: string | null) {
             mostLovedTrackVotes: data.mostLovedTrackVotes,
             weekNumber: 0, // Will be filled by cycle
             submittedByFid: data.submittedByFid,
+            submittedByUserId: data.submittedByUserId ?? null,
             submittedByUsername: data.submittedByUsername,
             tracks: data.tracks as string[] | null,
             genres: (data.genres as string[] | null) ?? null,
@@ -163,6 +165,7 @@ export function usePastAlbums(year?: number) {
             mostLovedTrackVotes: a.mostLovedTrackVotes,
             weekNumber: a.weekNumber,
             submittedByFid: a.submittedByFid,
+            submittedByUserId: a.submittedByUserId ?? null,
             submittedByUsername: a.submittedByUsername,
             tracks: null,
             genres: (a.genres as string[] | null) ?? null,

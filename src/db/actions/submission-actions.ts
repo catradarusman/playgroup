@@ -101,6 +101,7 @@ export async function getSubmissions(cycleId: string) {
       spotifyUrl: albums.spotifyUrl,
       genres: albums.genres,
       submittedByFid: albums.submittedByFid,
+      submittedByUserId: albums.submittedByUserId,
       submittedByUsername: albums.submittedByUsername,
       createdAt: albums.createdAt,
       votes: sql<number>`count(${votes.id})::int`,
@@ -122,6 +123,7 @@ export async function getSubmissions(cycleId: string) {
       genres: (row.genres as string[] | null) ?? [],
       votes: row.votes,
       submitterFid: row.submittedByFid,
+      submitterUserId: row.submittedByUserId,
       submitter: row.submittedByUsername,
       daysAgo: Math.floor((Date.now() - row.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
     }))

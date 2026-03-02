@@ -11,7 +11,7 @@ import { HowItWorks } from './how-it-works';
 import { AlbumDetailView } from './album-detail-view';
 
 interface NowPlayingTabProps {
-  onViewProfile?: (fid: number) => void;
+  onViewProfile?: (fid: number | null, userId?: string) => void;
 }
 
 function GenrePills({ genres }: { genres: string[] }) {
@@ -154,7 +154,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
               <P className="text-xs text-gray-600 mt-1">
                 submitted by{' '}
                 <button
-                  onClick={() => currentAlbum.submittedByFid && onViewProfile?.(currentAlbum.submittedByFid)}
+                  onClick={() => onViewProfile?.(currentAlbum.submittedByFid, currentAlbum.submittedByUserId ?? undefined)}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   @{currentAlbum.submittedByUsername}

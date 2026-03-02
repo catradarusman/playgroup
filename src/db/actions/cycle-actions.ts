@@ -155,6 +155,7 @@ export async function getPastAlbums(_year?: number) {
       mostLovedTrack: albums.mostLovedTrack,
       mostLovedTrackVotes: albums.mostLovedTrackVotes,
       submittedByFid: albums.submittedByFid,
+      submittedByUserId: albums.submittedByUserId,
       submittedByUsername: albums.submittedByUsername,
       genres: albums.genres,
       createdAt: albums.createdAt,

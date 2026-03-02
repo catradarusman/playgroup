@@ -9,7 +9,7 @@ import { useReviews } from '@/hooks/use-reviews';
 import { AlbumDetailView } from './album-detail-view';
 
 interface ArchiveTabProps {
-  onViewProfile?: (fid: number) => void;
+  onViewProfile?: (fid: number | null, userId?: string) => void;
 }
 
 export function ArchiveTab({ onViewProfile }: ArchiveTabProps) {

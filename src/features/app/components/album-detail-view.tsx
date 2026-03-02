@@ -25,6 +25,7 @@ interface AlbumForDisplay {
 interface ReviewForDisplay {
   id: string | number;
   fid?: number | null;
+  userId?: string | null;
   user: string;
   displayName?: string;
   pfp: string;
@@ -45,7 +46,7 @@ interface AlbumDetailViewProps {
   userId?: string | null;
   username?: string;
   pfpUrl?: string | null;
-  onViewProfile?: (fid: number) => void;
+  onViewProfile?: (fid: number | null, userId?: string) => void;
 }
 
 function GenrePills({ genres }: { genres: string[] }) {
@@ -220,7 +221,7 @@ export function AlbumDetailView({
                     <div className="flex items-center gap-2">
                       <img src={review.pfp} className="w-8 h-8 rounded-full" alt="" />
                       <button
-                        onClick={() => review.fid && onViewProfile?.(review.fid)}
+                        onClick={() => onViewProfile?.(review.fid ?? null, review.userId ?? undefined)}
                         className="font-medium text-white hover:text-gray-300 transition-colors"
                       >
                         @{review.user}

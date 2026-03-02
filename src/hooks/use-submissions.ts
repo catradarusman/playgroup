@@ -18,6 +18,7 @@ export interface SubmissionData {
   genres: string[];
   votes: number;
   submitterFid: number | null;
+  submitterUserId: string | null;
   submitter: string;
   daysAgo: number;
   hasVoted: boolean;
@@ -79,24 +80,21 @@ export function useUserSubmissionCount(
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if ((!fid && !userId) || !cycleId) {
       setIsLoading(false);
       return;
     }
-
-    const currentCycleId = cycleId;
-
-    async function load() {
-      const c = await getUserSubmissionCount(currentCycleId, fid ?? undefined, userId ?? undefined);
-      setCount(c);
-      setIsLoading(false);
-    }
-
-    load();
+    const c = await getUserSubmissionCount(cycleId, fid ?? undefined, userId ?? undefined);
+    setCount(c);
+    setIsLoading(false);
   }, [fid, userId, cycleId]);
 
-  return { count, isLoading };
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { count, isLoading, refresh };
 }
 
 /**
