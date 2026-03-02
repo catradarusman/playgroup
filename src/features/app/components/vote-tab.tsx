@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, H3, P, Button, Skeleton } from '@neynar/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useCycle } from '@/hooks/use-cycle';
-import { useSubmissions, useVote, useUserSubmissionCount } from '@/hooks/use-submissions';
+import { useSubmissions, useVote } from '@/hooks/use-submissions';
 import { SubmissionForm } from './submission-form';
 
 interface VoteTabProps {
@@ -14,9 +14,9 @@ interface VoteTabProps {
 function GenrePills({ genres }: { genres: string[] }) {
   if (!genres.length) return null;
   return (
-    <div className="flex flex-wrap gap-1 mt-0.5">
-      {genres.slice(0, 2).map((g) => (
-        <span key={g} className="text-xs px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-500">
+    <div className="flex flex-wrap gap-1">
+      {genres.slice(0, 3).map((g) => (
+        <span key={g} className="text-xs px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-400">
           {g}
         </span>
       ))}
@@ -47,21 +47,12 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
   // Voting hook
   const { vote, isVoting } = useVote();
 
-  // Submission count (enforces 3-per-cycle limit in UI)
-  const { count: submissionCount, refresh: refreshSubmissionCount } = useUserSubmissionCount(
-    cycle?.id ?? null,
-    userFid,
-    userId
-  );
-
   const phase = cycle?.phase ?? 'voting';
   const daysLeftInPhase = cycle?.countdown?.days ?? 0;
   const hoursLeft = cycle?.countdown?.hours ?? 0;
   const minutesLeft = cycle?.countdown?.minutes ?? 0;
 
   const canVote = phase === 'voting';
-  const MAX_SUBMISSIONS = 3;
-  const hasReachedLimit = submissionCount >= MAX_SUBMISSIONS;
   const totalVotes = submissions.reduce((sum, s) => sum + s.votes, 0);
 
   const handleVote = async (id: string) => {
@@ -95,7 +86,6 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
           onClose={() => {
             setShowSubmitForm(false);
             refreshSubmissions();
-            refreshSubmissionCount();
           }}
           cycleId={cycle?.id ?? null}
           userFid={userFid}
@@ -130,15 +120,10 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
       </Card>
 
       {/* Submit Button */}
-      {canVote && isAuthenticated && !hasReachedLimit && (
+      {canVote && isAuthenticated && (
         <Button className="w-full" onClick={() => setShowSubmitForm(true)}>
-          + Submit an Album ({submissionCount}/{MAX_SUBMISSIONS})
+          + Submit an Album
         </Button>
-      )}
-      {canVote && isAuthenticated && hasReachedLimit && (
-        <div className="text-center py-2">
-          <P className="text-sm text-gray-500">Limit reached ({MAX_SUBMISSIONS}/{MAX_SUBMISSIONS}) — focus on voting!</P>
-        </div>
       )}
       {canVote && !isAuthenticated && (
         <div className="text-center py-2">
@@ -184,8 +169,10 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                     )}
                     <div className="flex-1 min-w-0">
                       <P className="font-medium text-sm text-white truncate">{album.title}</P>
-                      <P className="text-xs text-gray-400">{album.artist}</P>
-                      <GenrePills genres={album.genres} />
+                      <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                        <P className="text-xs text-gray-400">{album.artist}</P>
+                        <GenrePills genres={album.genres} />
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <P className="text-xs text-gray-600">
                           <button

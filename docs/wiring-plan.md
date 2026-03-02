@@ -96,7 +96,7 @@ export const reviews = pgTable("reviews", {
 - `submitAlbum(data)` - Submit album with Spotify metadata & tracks
 - `getSubmissions(cycleId)` - Get all submissions with vote counts
 - `getSubmissionsWithUserVotes(cycleId, fid)` - Include user's vote status
-- `getUserSubmissionCount(fid, cycleId)` - Check 3-per-cycle limit
+- `getUserSubmissionCount(fid, cycleId)` - Count user submissions (UI limit removed)
 - `castVote(albumId, fid)` - Cast vote (one per album)
 - `selectWinner(cycleId)` - Auto-select winner by votes
 
@@ -117,9 +117,9 @@ export const reviews = pgTable("reviews", {
 - `useListenerCount(cycleId)` - Active listener count
 
 #### `src/hooks/use-submissions.ts`
-- `useSubmissions(cycleId, fid)` - Submissions with vote status
-- `useUserSubmissionCount(fid, cycleId)` - User's submission count
-- `useSubmitAlbum()` - Mutation for submitting (includes tracks)
+- `useSubmissions(cycleId, fid, userId)` - Submissions with vote status
+- `useUserSubmissionCount(fid, cycleId, userId)` - User's submission count (available but no UI limit)
+- `useSubmitAlbum()` - Mutation for submitting (includes tracks + genres)
 - `useVote()` - Mutation for voting
 
 #### `src/hooks/use-reviews.ts`
@@ -169,7 +169,8 @@ Share image route: `src/app/api/share/image/[type]/route.tsx`
 | Component | Hooks Used | Data Source |
 |-----------|-----------|-------------|
 | `now-playing-tab.tsx` | `useCycle`, `useCurrentAlbum`, `useReviews`, `useListenerCount` | DB + fallback to mock |
-| `vote-tab.tsx` | `useCycle`, `useSubmissions`, `useVote`, `useUserSubmissionCount` | DB + fallback to mock |
+| `vote-tab.tsx` | `useCycle`, `useSubmissions`, `useVote` | DB + fallback to mock |
+| `profile-view.tsx` | `useAuth`, `useProfile`, `useUserInfo`, `updateUserProfile` | DB |
 | `submission-form.tsx` | `useSubmitAlbum`, Spotify API | Spotify + DB |
 | `archive-tab.tsx` | `usePastAlbums`, `useReviews` | DB + fallback to mock |
 | `album-detail-view.tsx` | `useReviews`, `useUserReview` | DB + fallback to mock |
@@ -198,10 +199,10 @@ Share image route: `src/app/api/share/image/[type]/route.tsx`
 ## Validation Rules Implemented
 
 ### Submissions
-- ✅ Max 3 submissions per cycle per user
 - ✅ No duplicate Spotify IDs in same cycle
 - ✅ No past winners (status='selected')
 - ✅ Spotify links only (validated in form)
+- ~~Max 3 submissions per cycle~~ (removed — submissions now unlimited)
 
 ### Voting
 - ✅ One vote per album per user

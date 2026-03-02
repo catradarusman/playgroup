@@ -48,7 +48,7 @@
 
 ### Must-Have (MVP) ✅ ALL COMPLETE
 
-- [x] **Album Submission**: Paste Spotify link → Auto-fetch metadata → Preview → Submit (max 3 per cycle)
+- [x] **Album Submission**: Paste Spotify link → Auto-fetch metadata → Preview → Submit (unlimited per cycle)
 - [x] **Spotify API Integration**: Auto-fetches album title, artist, cover art, and track listing
 - [x] **Voting System**: Upvote albums, one vote per album, unlimited total votes
 - [x] **Winner Selection**: Auto-select highest votes at Friday 10pm WIB (tiebreakers: fewest wins → earliest submission)
@@ -60,12 +60,14 @@
 - [x] **Phase-Aware UI**: Different states for voting vs listening vs reviewing
 - [x] **Countdown Timer**: Live countdown to voting close / listening end
 - [x] **Share Buttons**: 3 personalized share images (album, review stats, journey progress)
+- [x] **Genre Tags**: Spotify artist genres shown inline beside album artist on Vote tab (up to 3)
+- [x] **User Profile**: Sign-out button, edit username, and edit profile picture URL
+- [x] **Unlimited Submissions**: No per-cycle submission cap — open to all members
 
 ### Submission Rules (Enforced)
 
 | Rule                          | Error Message                                    |
 | ----------------------------- | ------------------------------------------------ |
-| Max 3 submissions per cycle   | "Limit reached - focus on voting!"               |
 | No duplicates in same cycle   | "Already submitted - go upvote it!"              |
 | No past winners               | "This won in Week X - check The 26!"             |
 | Spotify links only            | "Spotify only - search there instead"            |
@@ -183,7 +185,7 @@
 | ---------------------------------- | ----------------------------------------------- | ------- |
 | 2-week cycles (26 albums/year)     | Forces slow, intentional listening              | Phase 1 |
 | Friday 10pm WIB voting close       | Clear deadline, wraps up work week              | Phase 1 |
-| 3 submissions per cycle limit      | Prevents spam, forces curation                  | Phase 1 |
+| Unlimited submissions per cycle    | Open community, encourages participation        | Phase 2 |
 | No un-voting                       | Keeps simple, prevents gaming                   | Phase 1 |
 | 50 char minimum reviews            | Forces thoughtful feedback                      | Phase 1 |
 | Automatic tiebreakers              | No manual intervention, fair rules              | Phase 1 |
@@ -216,3 +218,7 @@
 | 2025-02-08 | Phase 6 | **Theme Refinement**: Converted all colored elements to monochrome |
 | 2025-02-08 | Phase 6 | **Theme Refinement**: Replaced all emoji icons with monochrome text/symbols |
 | 2025-02-08 | Phase 6 | Fixed app-settings.json validation errors (shortened subtitle, description, tagline) |
+| 2026-03-02 | Phase 7 | Genre tags shown inline with artist on Vote tab (up to 3 genres, styled pills) |
+| 2026-03-02 | Phase 7 | Removed 3-submission-per-cycle limit — submissions now unlimited |
+| 2026-03-02 | Phase 7 | Added sign-out button to user profile view |
+| 2026-03-02 | Phase 7 | Added edit profile UI: change username and profile picture URL |

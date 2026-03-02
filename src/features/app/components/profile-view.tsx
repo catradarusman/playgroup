@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, H2, H3, H4, P, Button } from '@neynar/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile, useUserInfo } from '@/hooks/use-profile';
+import { updateUserProfile } from '@/db/actions/user-actions';
 
 interface ProfileViewProps {
   fid?: number | null;      // Farcaster users
@@ -13,11 +15,18 @@ interface ProfileViewProps {
 
 export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewProps) {
   // Unified auth - supports both Farcaster and Privy users
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, logout } = useAuth();
 
   // Load profile data — useProfile handles fid vs userId routing
   const { profile, isLoading, error } = useProfile(fid ?? null, userId ?? null);
   const { userInfo } = useUserInfo(fid ?? null, userId ?? null);
+
+  // Edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPfpUrl, setEditPfpUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Check if this is the current user's own profile
   const isOwnProfile =
@@ -32,6 +41,44 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
   const displayPfp: string = isOwnProfile
     ? (currentUser?.pfpUrl ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`)
     : (userInfo?.pfp ?? `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`);
+
+  const handleStartEdit = () => {
+    setEditUsername(displayName ?? '');
+    setEditPfpUrl(currentUser?.pfpUrl ?? '');
+    setEditError(null);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditError(null);
+  };
+
+  const handleSave = async () => {
+    if (!currentUser?.id) return;
+    setIsSaving(true);
+    setEditError(null);
+    try {
+      const result = await updateUserProfile(currentUser.id, {
+        username: editUsername.trim() || undefined,
+        pfpUrl: editPfpUrl.trim() || undefined,
+      });
+      if (result) {
+        window.location.reload();
+      } else {
+        setEditError('Failed to save changes. Try again.');
+        setIsSaving(false);
+      }
+    } catch {
+      setEditError('An error occurred. Try again.');
+      setIsSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await logout();
+    onBack();
+  };
 
   if (isLoading) {
     return (
@@ -68,24 +115,101 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
       {/* Profile Header */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <img
-              src={displayPfp}
-              alt={displayName}
-              className="w-16 h-16 rounded-full border-2 border-gray-700"
-            />
-            <div>
-              <H2>@{displayName}</H2>
-              {profile?.memberSince && (
-                <P className="text-sm text-gray-500">
-                  Member since {formatDate(profile.memberSince)}
+          {isEditing ? (
+            /* Edit mode */
+            <div className="space-y-4">
+              <H3>Edit Profile</H3>
+              {currentUser?.authProvider === 'farcaster' && (
+                <P className="text-xs text-yellow-500/80 bg-yellow-500/10 rounded px-3 py-2">
+                  Your profile is synced from Farcaster — changes may be overwritten on next sign-in.
                 </P>
               )}
-              {!profile?.memberSince && (
-                <P className="text-sm text-gray-500">New member</P>
+              <div className="flex gap-4 items-start">
+                {/* PFP preview */}
+                <img
+                  src={editPfpUrl || `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`}
+                  alt="preview"
+                  className="w-16 h-16 rounded-full border-2 border-gray-700 flex-shrink-0 object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`;
+                  }}
+                />
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Username</label>
+                    <input
+                      type="text"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500"
+                      placeholder="username"
+                      maxLength={30}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Profile picture URL</label>
+                    <input
+                      type="url"
+                      value={editPfpUrl}
+                      onChange={(e) => setEditPfpUrl(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500"
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+              </div>
+              {editError && (
+                <P className="text-sm text-red-500">{editError}</P>
               )}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={isSaving || !editUsername.trim()}
+                >
+                  {isSaving ? 'Saving…' : 'Save'}
+                </Button>
+                <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* View mode */
+            <div className="flex items-center gap-4">
+              <img
+                src={displayPfp}
+                alt={displayName}
+                className="w-16 h-16 rounded-full border-2 border-gray-700 flex-shrink-0 object-cover"
+              />
+              <div className="flex-1 min-w-0">
+                <H2>@{displayName}</H2>
+                {profile?.memberSince && (
+                  <P className="text-sm text-gray-500">
+                    Member since {formatDate(profile.memberSince)}
+                  </P>
+                )}
+                {!profile?.memberSince && (
+                  <P className="text-sm text-gray-500">New member</P>
+                )}
+                {isOwnProfile && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={handleStartEdit}>
+                      Edit profile
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-500 border-red-500/30 hover:bg-red-500/10"
+                      onClick={handleSignOut}
+                    >
+                      Sign out
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
