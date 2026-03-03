@@ -32,15 +32,25 @@
 
 ## Core Loop (2-Week Cycle)
 
-| Day           | Phase      | Activity                                    |
-| ------------- | ---------- | ------------------------------------------- |
-| Monday        | Voting     | Voting opens, members submit Spotify albums |
-| Mon–Fri       | Voting     | Community votes on submissions              |
-| Friday 10pm WIB | Cutoff   | Voting closes, winner auto-selected         |
-| Saturday      | Listening  | Winner announced, listening begins          |
-| Sat–Fri       | Listening  | Everyone listens on Spotify                 |
-| Sat–Sun (next)| Reviewing  | Members write reviews                       |
-| Monday        | New Cycle  | Repeat                                      |
+Cycles are anchored to **Mar 2 2026 00:00 Jakarta (UTC+7)** and repeat every 14 days (26 cycles/year).
+
+| Days  | Phase               | Activity                                                      |
+| ----- | ------------------- | ------------------------------------------------------------- |
+| 1–7   | Voting              | Voting opens, members submit & vote on Spotify albums         |
+| Day 8 | Transition          | Midnight Jakarta: voting closes, winner auto-selected         |
+| 8–14  | Listening           | Everyone listens on Spotify together                          |
+| 12–14 | Listening + Review  | Review window opens — rate & write reviews (last 3 days)      |
+| Day 15| New Cycle           | Repeat — new voting opens at midnight Jakarta                 |
+
+**Example (Cycle 1, Jakarta times):**
+
+| Date       | Event                              |
+| ---------- | ---------------------------------- |
+| Mar 2 00:00 | Voting opens                      |
+| Mar 9 00:00 | Voting closes ("Mar 8 midnight")  |
+| Mar 9 00:00 | Listening begins                  |
+| Mar 13 00:00| Reviews & scores open             |
+| Mar 16 00:00| New cycle — voting opens          |
 
 ---
 
@@ -82,11 +92,12 @@
 
 ### Review Rules (Enforced)
 
-| Rule                          | Behavior                                         |
-| ----------------------------- | ------------------------------------------------ |
-| One review per album per user | Blocks duplicate submissions                     |
-| Minimum 50 characters         | Shows character counter, blocks short reviews    |
-| Reviews stay open forever     | Late reviews allowed                             |
+| Rule                          | Behavior                                                       |
+| ----------------------------- | -------------------------------------------------------------- |
+| One review per album per user | Blocks duplicate submissions                                   |
+| Minimum 50 characters         | Shows character counter, blocks short reviews                  |
+| Review window: last 3 days    | Reviews only open during days 12–14 of the listening period    |
+| Server-side gating            | `reviewOpensAt` checked server-side in `submitReview()`        |
 
 ### Nice-to-Have (Post-MVP)
 
@@ -112,11 +123,11 @@
 | **Persistence**       | Yes - albums, votes, reviews, cycles all persist                   |
 | **What Needs Saving** | Albums (metadata cached), votes, reviews, cycle state, user stats  |
 | **User-Specific**     | Yes - votes, reviews, submission counts are per-user               |
-| **Authentication**    | Farcaster login (FID-based)                                        |
+| **Authentication**    | Farcaster or email via Privy (no Google)                           |
 
 ### Key Entities
 
-- **Cycles**: weekNumber, year, phase, startDate, endDate, votingEndsAt, winnerId
+- **Cycles**: weekNumber, year, phase, startDate, endDate, votingEndsAt, **reviewOpensAt**, winnerId
 - **Albums**: spotifyId, title, artist, coverUrl, spotifyUrl, tracks[], cycleId, submittedByFid, submittedByUsername, status, avgRating, totalReviews, mostLovedTrack
 - **Votes**: albumId, voterFid, createdAt
 - **Reviews**: albumId, reviewerFid, reviewerUsername, reviewerPfp, rating, reviewText, favoriteTrack, hasListened, createdAt
@@ -222,3 +233,7 @@
 | 2026-03-02 | Phase 7 | Removed 3-submission-per-cycle limit — submissions now unlimited |
 | 2026-03-02 | Phase 7 | Added sign-out button to user profile view |
 | 2026-03-02 | Phase 7 | Added edit profile UI: change username and profile picture URL |
+| 2026-03-03 | Phase 8 | **Cycle redesign**: 14-day cycles anchored to Mar 2 2026 Jakarta (UTC+7). 7 days voting + 7 days listening. Review window opens last 3 days of listening. Added `reviewOpensAt` column to cycles table. |
+| 2026-03-03 | Phase 8 | **Login cleanup**: Removed Google login option from both custom UI and Privy config. Email + Farcaster only. |
+| 2026-03-03 | Phase 8 | **Banner redesign**: CycleStatusBanner now has 3 states — VOTING OPEN / LISTENING WEEK (with "Reviews open in Xd Xh") / REVIEW OPEN. |
+| 2026-03-03 | Phase 8 | **Server-side review gating**: `submitReview()` checks `reviewOpensAt` before accepting review submissions. |

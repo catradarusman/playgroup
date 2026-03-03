@@ -3,7 +3,7 @@
   "readyToPublish": true,
   "currentPhase": 6,
   "startedAt": "2026-02-08T07:26:00.070Z",
-  "lastUpdatedAt": "2026-02-28T00:00:00.000Z",
+  "lastUpdatedAt": "2026-03-03T00:00:00.000Z",
   "completedAt": null,
   "phases": {
     "1": {
@@ -190,11 +190,39 @@
         ]
       },
       "notes": "All roadmap features implemented. Privy credentials configured for universal login."
+    },
+    "7": {
+      "name": "cycle-redesign",
+      "displayName": "2-Week Cycle & Login Cleanup",
+      "status": "completed",
+      "completedAt": "2026-03-03T00:00:00.000Z",
+      "changes": [
+        "Removed Google login from Privy config and custom login modal (email + Farcaster only)",
+        "Redesigned cycle to 14-day anchored schedule (26 cycles/year) starting Mar 2 2026 Jakarta UTC+7",
+        "7 days voting + 7 days listening; review/score window opens last 3 days of listening",
+        "Added reviewOpensAt column to cycles table (nullable for old cycles)",
+        "Added computeCycleBoundaries() helper using fixed Jakarta anchor in cycle-actions.ts",
+        "getOrCreateCurrentCycle() now finds active cycle by time range instead of weekNumber",
+        "CycleStatusBanner redesigned with 3 states: VOTING OPEN / LISTENING WEEK (with review countdown) / REVIEW OPEN",
+        "canReview gated on cycle.isReviewOpen (both client and server-side)",
+        "Week display updated from 'of 52' to 'of 26'"
+      ],
+      "files": [
+        "src/features/app/components/login-modal.tsx",
+        "src/lib/privy.ts",
+        "src/db/schema.ts",
+        "src/db/actions/cycle-actions.ts",
+        "src/db/actions/review-actions.ts",
+        "src/hooks/use-cycle.ts",
+        "src/features/app/components/cycle-status-banner.tsx",
+        "src/features/app/components/now-playing-tab.tsx",
+        "src/app/api/admin/reset-cycle/route.ts"
+      ]
     }
   },
   "metadata": {
     "appName": "Playgroup",
-    "description": "Music community app - 52 albums per year through community voting",
+    "description": "Music community app - 26 albums per year through community voting (2-week cycles)",
     "theme": "dark monochrome futuristic",
     "databaseTables": [
       "cycles",
@@ -209,7 +237,7 @@
     "productionReady": true
   },
   "roadmapFeatures": {
-    "one-week-cycles": "completed",
+    "two-week-cycles": "completed",
     "user-profiles": "completed",
     "community-buzz": "completed",
     "universal-access-privy": "completed",

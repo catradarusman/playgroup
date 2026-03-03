@@ -64,7 +64,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
         reviews={reviews}
         tracks={currentAlbum.tracks ?? []}
         onBack={() => setView('main')}
-        canReview={phase === 'listening'}
+        canReview={phase === 'listening' && (cycle?.isReviewOpen ?? false)}
         userFid={user?.fid ?? null}
         userId={user?.id ?? null}
         username={user?.username}
@@ -88,7 +88,12 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   if (!currentAlbum) {
     return (
       <div className="space-y-4">
-        <CycleStatusBanner phase={phase} countdown={countdown} />
+        <CycleStatusBanner
+          phase={phase}
+          countdown={countdown}
+          reviewOpensAt={cycle?.reviewOpensAt ?? null}
+          isReviewOpen={cycle?.isReviewOpen ?? false}
+        />
         <HowItWorks />
         <Card>
           <CardContent className="p-6">
@@ -119,7 +124,12 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
   return (
     <div className="space-y-4">
       {/* Cycle Status */}
-      <CycleStatusBanner phase={phase} countdown={countdown} />
+      <CycleStatusBanner
+        phase={phase}
+        countdown={countdown}
+        reviewOpensAt={cycle?.reviewOpensAt ?? null}
+        isReviewOpen={cycle?.isReviewOpen ?? false}
+      />
 
       {/* How It Works - for new users */}
       <HowItWorks />
@@ -132,7 +142,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
               {phase === 'listening' ? 'Now Listening' : "Last Week's Winner"}
             </P>
             <P className="text-xs text-gray-600">
-              Week {currentAlbum.weekNumber} of 52
+              Week {currentAlbum.weekNumber} of 26
             </P>
             {currentAlbum.coverUrl ? (
               <img

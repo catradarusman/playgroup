@@ -47,7 +47,7 @@ export const users = pgTable("users", {
 });
 
 /**
- * Cycles - 1-week listening cycles (52 per year)
+ * Cycles - 2-week listening cycles (26 per year)
  */
 export const cycles = pgTable("cycles", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -57,6 +57,7 @@ export const cycles = pgTable("cycles", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   votingEndsAt: timestamp("voting_ends_at").notNull(),
+  reviewOpensAt: timestamp("review_opens_at"), // nullable — old cycles treated as always open
   winnerId: uuid("winner_id"), // references albums.id when selected (FK omitted to avoid circular type inference)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

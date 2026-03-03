@@ -2,7 +2,46 @@
 
 import { db } from '@/neynar-db-sdk/db';
 import { cycles, albums, votes } from '@/db/schema';
-import { eq, desc, and, sql, getTableColumns } from 'drizzle-orm';
+import { eq, desc, and, sql, getTableColumns, lte, gte } from 'drizzle-orm';
+
+// ===========================================
+// CYCLE TIMING CONSTANTS (Jakarta UTC+7)
+// ===========================================
+
+// Anchor: Mar 2 2026 00:00:00 Jakarta = Mar 1 2026 17:00:00 UTC
+const ANCHOR_UTC = new Date('2026-03-01T17:00:00.000Z');
+const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000; // UTC+7
+const CYCLE_MS = 14 * 24 * 60 * 60 * 1000;    // 14 days
+const VOTING_MS = 7 * 24 * 60 * 60 * 1000;    // 7 days voting
+const REVIEW_OFFSET_MS = 11 * 24 * 60 * 60 * 1000; // reviews open on day 12 (3 days before end)
+
+/**
+ * Compute the anchor-based cycle boundaries for the cycle that contains `now`.
+ * All boundaries are in absolute UTC milliseconds; they correspond to exact
+ * Jakarta-midnight boundaries since the anchor is a Jakarta midnight.
+ *
+ * Cycle 1 example (Jakarta times):
+ *   startDate    = Mar 2  00:00:00
+ *   votingEndsAt = Mar 9  00:00:00  ("Mar 8 midnight")
+ *   reviewOpensAt= Mar 13 00:00:00  (last 3 days of listening)
+ *   endDate      = Mar 15 23:59:59.999
+ *   Next cycle   = Mar 16 00:00:00
+ */
+function computeCycleBoundaries(now: Date) {
+  const elapsed = now.getTime() - ANCHOR_UTC.getTime();
+  const cycleNum = Math.max(0, Math.floor(elapsed / CYCLE_MS));
+
+  const startDate = new Date(ANCHOR_UTC.getTime() + cycleNum * CYCLE_MS);
+  const votingEndsAt = new Date(startDate.getTime() + VOTING_MS);
+  const reviewOpensAt = new Date(startDate.getTime() + REVIEW_OFFSET_MS);
+  const endDate = new Date(startDate.getTime() + CYCLE_MS - 1); // 1ms before next cycle
+
+  const weekNumber = cycleNum + 1; // 1-indexed
+  // Derive year from the Jakarta start date
+  const year = new Date(startDate.getTime() + JAKARTA_OFFSET_MS).getUTCFullYear();
+
+  return { cycleNum, weekNumber, year, startDate, votingEndsAt, reviewOpensAt, endDate };
+}
 
 /**
  * Get the current active cycle
@@ -49,8 +88,15 @@ export async function getCycleWithCountdown() {
   const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
   const minutes = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
 
+  // Derive review window state
+  // null reviewOpensAt = old cycle, treat as always open during listening
+  const isReviewOpen =
+    cycle.phase === 'listening' &&
+    (cycle.reviewOpensAt === null || now >= cycle.reviewOpensAt);
+
   return {
     ...cycle,
+    isReviewOpen,
     countdown: { days, hours, minutes },
   };
 }
@@ -197,6 +243,7 @@ export async function createCycle(data: {
   startDate: Date;
   endDate: Date;
   votingEndsAt: Date;
+  reviewOpensAt?: Date;
 }) {
   const result = await db.insert(cycles).values(data).returning();
   return result[0];
@@ -222,46 +269,45 @@ export async function getListenerCount(_cycleId: string): Promise<number> {
 }
 
 /**
- * Get or create a current cycle - ensures there's always an active cycle
- * Creates a new voting cycle if:
- * - No cycle exists at all
- * - The most recent cycle has fully ended (past endDate)
+ * Get or create a current cycle — ensures there's always an active cycle.
+ *
+ * Looks for a cycle that time-covers `now` (startDate ≤ now ≤ endDate).
+ * If none exists, creates one using the fixed Jakarta anchor and 14-day cadence
+ * so cycles are always on the correct 2-week boundaries.
  */
 export async function getOrCreateCurrentCycle() {
-  const existing = await getCurrentCycle();
   const now = new Date();
 
-  // If a cycle exists and hasn't fully ended yet, keep using it
-  if (existing && now <= existing.endDate) {
-    return existing;
-  }
+  // Find any cycle that currently covers this moment
+  const [active] = await db
+    .select()
+    .from(cycles)
+    .where(and(lte(cycles.startDate, now), gte(cycles.endDate, now)))
+    .orderBy(desc(cycles.weekNumber))
+    .limit(1);
 
-  // Either no cycle exists, or the last cycle is fully over — start a fresh one
-  const year = now.getFullYear();
+  if (active) return active;
 
-  // Determine week number: increment from last cycle, or start at 1
-  const lastWeek = existing?.weekNumber ?? 0;
-  const nextWeek = lastWeek + 1;
+  // No active cycle — compute the correct boundaries from the anchor
+  const boundaries = computeCycleBoundaries(now);
 
-  // New cycle starts today, voting open for 4 days
-  const startDate = new Date(now);
-  startDate.setHours(0, 0, 0, 0);
+  // Find last cycle to avoid weekNumber collisions (use max of computed and DB max+1)
+  const [last] = await db
+    .select()
+    .from(cycles)
+    .orderBy(desc(cycles.weekNumber))
+    .limit(1);
 
-  const votingEndsAt = new Date(startDate);
-  votingEndsAt.setDate(votingEndsAt.getDate() + 4); // 4 days of voting
-  votingEndsAt.setHours(22, 0, 0, 0); // closes at 10pm
-
-  const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + 7); // full week
-  endDate.setHours(23, 59, 59, 999);
+  const weekNumber = Math.max(boundaries.weekNumber, (last?.weekNumber ?? 0) + 1);
 
   const newCycle = await createCycle({
-    weekNumber: nextWeek,
-    year,
+    weekNumber,
+    year: boundaries.year,
     phase: 'voting',
-    startDate,
-    endDate,
-    votingEndsAt,
+    startDate: boundaries.startDate,
+    endDate: boundaries.endDate,
+    votingEndsAt: boundaries.votingEndsAt,
+    reviewOpensAt: boundaries.reviewOpensAt,
   });
 
   return newCycle;

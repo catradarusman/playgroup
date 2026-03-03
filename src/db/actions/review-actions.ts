@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/neynar-db-sdk/db';
-import { reviews, albums } from '@/db/schema';
+import { reviews, albums, cycles } from '@/db/schema';
 import { eq, and, desc, sql, avg } from 'drizzle-orm';
 
 type TxClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -30,6 +30,25 @@ export async function submitReview(data: {
   // Validate text length
   if (data.text.length < 50) {
     return { success: false as const, error: 'Review must be at least 50 characters' };
+  }
+
+  // Server-side review window guard
+  const [album] = await db
+    .select({ cycleId: albums.cycleId })
+    .from(albums)
+    .where(eq(albums.id, data.albumId))
+    .limit(1);
+
+  if (album) {
+    const [cycle] = await db
+      .select({ reviewOpensAt: cycles.reviewOpensAt })
+      .from(cycles)
+      .where(eq(cycles.id, album.cycleId))
+      .limit(1);
+
+    if (cycle?.reviewOpensAt && new Date() < cycle.reviewOpensAt) {
+      return { success: false as const, error: 'Reviews are not open yet' };
+    }
   }
 
   try {

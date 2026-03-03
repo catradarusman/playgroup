@@ -1,7 +1,7 @@
 /**
  * Privy Configuration
  *
- * Privy enables email/Google login for non-Farcaster users.
+ * Privy enables email login for non-Farcaster users.
  * Each Privy user gets an auto-created smart wallet.
  */
 
@@ -14,7 +14,7 @@ export const isPrivyConfigured = () => {
 /**
  * Privy login methods to enable
  */
-export const PRIVY_LOGIN_METHODS = ['email', 'google', 'farcaster'] as const;
+export const PRIVY_LOGIN_METHODS = ['email', 'farcaster'] as const;
 
 /**
  * Privy appearance config

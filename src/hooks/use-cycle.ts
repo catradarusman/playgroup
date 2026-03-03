@@ -12,6 +12,8 @@ export interface CycleData {
   phase: CyclePhase;
   votingEndsAt: Date;
   endDate: Date;
+  reviewOpensAt: Date | null;
+  isReviewOpen: boolean;
   winnerId: string | null;
   countdown: {
     days: number;
@@ -64,6 +66,8 @@ export function useCycle() {
           phase: data.phase as CyclePhase,
           votingEndsAt: data.votingEndsAt,
           endDate: data.endDate,
+          reviewOpensAt: data.reviewOpensAt ?? null,
+          isReviewOpen: data.isReviewOpen,
           winnerId: data.winnerId,
           countdown: data.countdown,
         });
