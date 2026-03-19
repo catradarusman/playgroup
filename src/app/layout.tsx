@@ -1,6 +1,7 @@
 import "@/app/globals.css";
 import { ProvidersAndInitialization } from "@/features/app/providers-and-initialization";
 import { Outfit, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { ReactNode } from "react";
 
 const outfit = Outfit({
@@ -14,6 +15,28 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
 });
+
+export const metadata: Metadata = {
+  title: "Playgroup",
+  description: "Music community — 26 albums a year",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Playgroup",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
 
 // Force dark mode script - runs before any React hydration
 const forceDarkModeScript = `
