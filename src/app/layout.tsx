@@ -1,5 +1,6 @@
 import "@/app/globals.css";
 import { ProvidersAndInitialization } from "@/features/app/providers-and-initialization";
+import SwRegister from "@/app/sw-register";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { ReactNode } from "react";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${outfit.className} ${jetbrainsMono.variable} antialiased bg-black`}
       >
+        <SwRegister />
         <ProvidersAndInitialization>{children}</ProvidersAndInitialization>
       </body>
     </html>
