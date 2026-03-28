@@ -14,7 +14,7 @@ export function HowItWorks() {
             </div>
             <div>
               <P className="font-medium text-sm text-white">Submit & Vote</P>
-              <P className="text-xs text-gray-400">Mon-Thu: Share albums, upvote favorites</P>
+              <P className="text-xs text-gray-400">Days 1–7: Submit your pick, vote for favorites</P>
             </div>
           </div>
           <div className="flex gap-3">
@@ -23,7 +23,7 @@ export function HowItWorks() {
             </div>
             <div>
               <P className="font-medium text-sm text-white">Listen Together</P>
-              <P className="text-xs text-gray-400">Fri-Sun: Winner announced, everyone listens</P>
+              <P className="text-xs text-gray-400">Days 8–14: Winner announced, everyone listens</P>
             </div>
           </div>
           <div className="flex gap-3">
@@ -32,7 +32,7 @@ export function HowItWorks() {
             </div>
             <div>
               <P className="font-medium text-sm text-white">Review & Repeat</P>
-              <P className="text-xs text-gray-400">Write your thoughts, start again Monday</P>
+              <P className="text-xs text-gray-400">Days 12–14: Score the album, new cycle begins</P>
             </div>
           </div>
         </div>
