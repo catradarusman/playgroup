@@ -170,16 +170,35 @@ async function autoTransitionToListening(cycleId: string) {
 }
 
 /**
- * Get the winning/current album for a cycle
+ * Get the winning/current album for a cycle.
+ * Tries status='selected' first; falls back to cycle.winnerId in case the
+ * album status is out of sync (e.g. manually inserted data).
  */
 export async function getCycleAlbum(cycleId: string) {
-  const result = await db
+  const byStatus = await db
     .select()
     .from(albums)
     .where(and(eq(albums.cycleId, cycleId), eq(albums.status, 'selected')))
     .limit(1);
 
-  return result[0] ?? null;
+  if (byStatus[0]) return byStatus[0];
+
+  // Fallback: look up via cycle.winnerId (handles data inconsistencies)
+  const [cycle] = await db
+    .select({ winnerId: cycles.winnerId })
+    .from(cycles)
+    .where(eq(cycles.id, cycleId))
+    .limit(1);
+
+  if (!cycle?.winnerId) return null;
+
+  const [winner] = await db
+    .select()
+    .from(albums)
+    .where(eq(albums.id, cycle.winnerId))
+    .limit(1);
+
+  return winner ?? null;
 }
 
 /**
