@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.scdn.co", // Spotify album covers
       },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
   devIndicators: false,

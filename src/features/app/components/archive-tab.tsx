@@ -62,6 +62,7 @@ export function ArchiveTab({ onViewProfile }: ArchiveTabProps) {
           mostLovedTrackVotes: selectedAlbum.mostLovedTrackVotes,
           weekNumber: selectedAlbum.weekNumber,
           submittedBy: selectedAlbum.submittedByUsername,
+          submissionNote: selectedAlbum.submissionNote ?? null,
         }}
         reviews={reviews}
         tracks={selectedAlbum.tracks ?? []}

@@ -83,6 +83,7 @@ export const albums = pgTable("albums", {
   mostLovedTrackVotes: integer("most_loved_track_votes").default(0),
   tracks: jsonb("tracks"), // string[] of track names (cached from Spotify)
   genres: jsonb("genres"), // string[] of genre tags (from Spotify artist)
+  submissionNote: text("submission_note"), // nullable — submitter's pitch for the album
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   // Prevent duplicate Spotify ID in same cycle

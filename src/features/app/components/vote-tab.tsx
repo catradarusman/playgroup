@@ -24,6 +24,32 @@ function GenrePills({ genres }: { genres: string[] }) {
   );
 }
 
+const NOTE_TRUNCATE = 120;
+
+function NoteCallout({ note }: { note: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!note) return null;
+
+  const isLong = note.length > NOTE_TRUNCATE;
+  const displayText = expanded || !isLong ? note : note.slice(0, NOTE_TRUNCATE).trimEnd() + '…';
+
+  return (
+    <div className="mt-2 pl-2 border-l-2 border-gray-700">
+      <P className="text-xs text-gray-400 italic leading-relaxed">
+        {displayText}
+        {isLong && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+            className="ml-1 text-gray-500 hover:text-gray-300 not-italic transition-colors"
+          >
+            {expanded ? 'less' : 'more'}
+          </button>
+        )}
+      </P>
+    </div>
+  );
+}
+
 export function VoteTab({ onViewProfile }: VoteTabProps) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
@@ -195,6 +221,7 @@ export function VoteTab({ onViewProfile }: VoteTabProps) {
                           </button>
                         )}
                       </div>
+                      <NoteCallout note={album.submissionNote ?? null} />
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       {canVote && isAuthenticated ? (

@@ -20,6 +20,7 @@ interface AlbumForDisplay {
   weekNumber: number;
   submittedBy: string;
   genres?: string[] | null;
+  submissionNote?: string | null;
 }
 
 interface ReviewForDisplay {
@@ -47,6 +48,16 @@ interface AlbumDetailViewProps {
   username?: string;
   pfpUrl?: string | null;
   onViewProfile?: (fid: number | null, userId?: string) => void;
+}
+
+function SubmissionPullQuote({ note, submittedBy }: { note: string | null | undefined; submittedBy: string }) {
+  if (!note) return null;
+  return (
+    <div className="mt-4 p-4 bg-gray-900 rounded-lg border border-gray-800">
+      <P className="text-sm text-gray-300 italic leading-relaxed">"{note}"</P>
+      <P className="text-xs text-gray-600 mt-2 not-italic">— @{submittedBy}</P>
+    </div>
+  );
 }
 
 function GenrePills({ genres }: { genres: string[] }) {
@@ -138,6 +149,7 @@ export function AlbumDetailView({
               <P className="text-xs text-gray-500 mt-1">
                 Submitted by @{album.submittedBy} • Week {album.weekNumber}
               </P>
+              <SubmissionPullQuote note={album.submissionNote} submittedBy={album.submittedBy} />
               <Button
                 className="mt-2"
                 onClick={() => {

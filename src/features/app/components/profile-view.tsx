@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, H2, H3, H4, P, Button } from '@neynar/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile, useUserInfo } from '@/hooks/use-profile';
@@ -27,6 +27,8 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
   const [editPfpUrl, setEditPfpUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if this is the current user's own profile
   const isOwnProfile =
@@ -52,6 +54,37 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditError(null);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser?.id) return;
+
+    setIsUploading(true);
+    setEditError(null);
+
+    try {
+      const compressed = await compressImage(file);
+      setEditPfpUrl(URL.createObjectURL(compressed)); // instant local preview
+
+      const formData = new FormData();
+      formData.append('file', compressed, 'avatar.jpg');
+      formData.append('userId', currentUser.id);
+
+      const res = await fetch('/api/upload/profile-picture', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error ?? 'Upload failed');
+      }
+      const { url } = await res.json();
+      setEditPfpUrl(url); // replace blob URL with real Supabase URL
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Upload failed');
+      setEditPfpUrl(currentUser?.pfpUrl ?? ''); // revert on failure
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -125,14 +158,33 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
                 </P>
               )}
               <div className="flex gap-4 items-start">
-                {/* PFP preview */}
-                <img
-                  src={editPfpUrl || `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`}
-                  alt="preview"
-                  className="w-16 h-16 rounded-full border-2 border-gray-700 flex-shrink-0 object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`;
-                  }}
+                {/* Clickable avatar — triggers file picker */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="relative w-16 h-16 rounded-full border-2 border-dashed border-gray-600 hover:border-gray-400 overflow-hidden flex-shrink-0 transition-colors disabled:opacity-50"
+                >
+                  <img
+                    src={editPfpUrl || `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/lorelei/svg?seed=${fid ?? userId}`;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <span className="text-white text-xs font-medium">
+                      {isUploading ? '…' : 'Change'}
+                    </span>
+                  </div>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
                 <div className="flex-1 space-y-3">
                   <div>
@@ -146,16 +198,9 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
                       maxLength={30}
                     />
                   </div>
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Profile picture URL</label>
-                    <input
-                      type="url"
-                      value={editPfpUrl}
-                      onChange={(e) => setEditPfpUrl(e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500"
-                      placeholder="https://..."
-                    />
-                  </div>
+                  {isUploading && (
+                    <P className="text-xs text-gray-400">Uploading photo…</P>
+                  )}
                 </div>
               </div>
               {editError && (
@@ -165,7 +210,7 @@ export function ProfileView({ fid, userId, onBack, onViewAlbum }: ProfileViewPro
                 <Button
                   className="flex-1"
                   onClick={handleSave}
-                  disabled={isSaving || !editUsername.trim()}
+                  disabled={isSaving || isUploading || !editUsername.trim()}
                 >
                   {isSaving ? 'Saving…' : 'Save'}
                 </Button>
@@ -378,5 +423,27 @@ function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'short',
     year: 'numeric',
+  });
+}
+
+function compressImage(file: File, maxDimension = 400): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Compression failed'))),
+        'image/jpeg',
+        0.85
+      );
+    };
+    img.onerror = reject;
+    img.src = url;
   });
 }

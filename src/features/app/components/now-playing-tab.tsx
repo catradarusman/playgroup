@@ -60,6 +60,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
           weekNumber: currentAlbum.weekNumber,
           submittedBy: currentAlbum.submittedByUsername,
           genres: currentAlbum.genres,
+          submissionNote: currentAlbum.submissionNote ?? null,
         }}
         reviews={reviews}
         tracks={currentAlbum.tracks ?? []}

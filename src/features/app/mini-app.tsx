@@ -65,7 +65,7 @@ export function MiniApp() {
             Now
           </TabsTrigger>
           <TabsTrigger value="vote" className="flex-1">
-            Vote
+            Submit & Vote
           </TabsTrigger>
           <TabsTrigger value="archive" className="flex-1">
             Archive

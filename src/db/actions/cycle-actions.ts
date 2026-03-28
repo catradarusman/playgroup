@@ -203,6 +203,7 @@ export async function getPastAlbums(_year?: number) {
       submittedByFid: albums.submittedByFid,
       submittedByUserId: albums.submittedByUserId,
       submittedByUsername: albums.submittedByUsername,
+      submissionNote: albums.submissionNote,
       genres: albums.genres,
       createdAt: albums.createdAt,
       weekNumber: cycles.weekNumber,

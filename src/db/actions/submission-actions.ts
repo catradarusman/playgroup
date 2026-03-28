@@ -21,6 +21,7 @@ export async function submitAlbum(data: {
   fid?: number; // Legacy - Farcaster users
   userId?: string; // New - unified user ID
   username: string;
+  submissionNote?: string;
 }) {
   // Check if this album was a past winner (outside transaction — read-only, no race risk)
   const pastWinner = await db
@@ -61,6 +62,7 @@ export async function submitAlbum(data: {
           submittedByFid: data.fid ?? null,
           submittedByUserId: data.userId ?? null,
           submittedByUsername: data.username,
+          submissionNote: data.submissionNote?.trim() || null,
           status: 'voting',
         })
         .returning();
@@ -103,6 +105,7 @@ export async function getSubmissions(cycleId: string) {
       submittedByFid: albums.submittedByFid,
       submittedByUserId: albums.submittedByUserId,
       submittedByUsername: albums.submittedByUsername,
+      submissionNote: albums.submissionNote,
       createdAt: albums.createdAt,
       votes: sql<number>`count(${votes.id})::int`,
     })
@@ -125,6 +128,7 @@ export async function getSubmissions(cycleId: string) {
       submitterFid: row.submittedByFid,
       submitterUserId: row.submittedByUserId,
       submitter: row.submittedByUsername,
+      submissionNote: row.submissionNote ?? null,
       daysAgo: Math.floor((Date.now() - row.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
     }))
     .sort((a, b) => b.votes - a.votes);

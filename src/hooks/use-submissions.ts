@@ -22,6 +22,7 @@ export interface SubmissionData {
   submitter: string;
   daysAgo: number;
   hasVoted: boolean;
+  submissionNote: string | null;
 }
 
 /**
@@ -118,6 +119,7 @@ export function useSubmitAlbum() {
       fid?: number;
       userId?: string;
       username: string;
+      submissionNote?: string;
     }) => {
       setIsSubmitting(true);
       setError(null);

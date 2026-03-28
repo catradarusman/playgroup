@@ -39,6 +39,7 @@ export interface AlbumData {
   submittedByUsername: string;
   tracks: string[] | null;
   genres: string[] | null;
+  submissionNote: string | null;
 }
 
 /**
@@ -128,6 +129,7 @@ export function useCurrentAlbum(cycleId: string | null) {
             submittedByUsername: data.submittedByUsername,
             tracks: data.tracks as string[] | null,
             genres: (data.genres as string[] | null) ?? null,
+            submissionNote: data.submissionNote ?? null,
           });
         }
       } catch (e) {
@@ -173,6 +175,7 @@ export function usePastAlbums(year?: number) {
             submittedByUsername: a.submittedByUsername,
             tracks: null,
             genres: (a.genres as string[] | null) ?? null,
+            submissionNote: a.submissionNote ?? null,
           }))
         );
       } catch (e) {

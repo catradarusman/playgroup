@@ -46,6 +46,8 @@ export function SubmissionForm({
   const [query, setQuery] = useState('');
   const [albumData, setAlbumData] = useState<AlbumData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submissionNote, setSubmissionNote] = useState('');
+  const NOTE_LIMIT = 280;
 
   const { submit, isSubmitting, error: submitError } = useSubmitAlbum();
 
@@ -137,6 +139,7 @@ export function SubmissionForm({
       fid: userFid,
       userId,
       username,
+      submissionNote: submissionNote.trim() || undefined,
     });
 
     if (result.success) {
@@ -209,6 +212,31 @@ export function SubmissionForm({
               {albumData.tracks.length > 0 && (
                 <P className="text-xs text-gray-600 mt-1">{albumData.tracks.length} tracks</P>
               )}
+            </div>
+          </div>
+
+          {/* Submission note */}
+          <div className="space-y-1">
+            <textarea
+              value={submissionNote}
+              onChange={(e) => {
+                if (e.target.value.length <= NOTE_LIMIT) setSubmissionNote(e.target.value);
+              }}
+              placeholder="Why should the group listen to this?"
+              rows={3}
+              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-gray-500 transition-colors"
+            />
+            <div className="flex justify-between items-center">
+              <P className="text-xs text-gray-600">Optional — your pitch to the group</P>
+              <P className={`text-xs tabular-nums ${
+                submissionNote.length >= NOTE_LIMIT
+                  ? 'text-red-500'
+                  : submissionNote.length >= NOTE_LIMIT * 0.85
+                  ? 'text-yellow-600'
+                  : 'text-gray-600'
+              }`}>
+                {submissionNote.length}/{NOTE_LIMIT}
+              </P>
             </div>
           </div>
 
