@@ -2,6 +2,19 @@
 
 import { ReactNode } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+
+// Privy 3.x renders SVG icons using the HTML attribute `clip-path` instead of
+// React's camelCase `clipPath`, which triggers a React Console Error in dev.
+// That error causes Next.js's dev overlay to appear on top of the login modal,
+// making it look like sign-in is broken. Suppress this specific warning until
+// Privy ships a fix upstream.
+if (typeof console !== "undefined") {
+  const _orig = console.error.bind(console);
+  console.error = (...args: Parameters<typeof console.error>) => {
+    if (typeof args[0] === "string" && args[0].includes("clip-path")) return;
+    _orig(...args);
+  };
+}
 import {
   PRIVY_APP_ID,
   PRIVY_APPEARANCE,

@@ -40,7 +40,7 @@ export function ProvidersAndInitialization({
       <QueryClientProvider client={queryClient}>
         {/* LLMs: Add additional providers between here */}
         {PrivyWrapper ? (
-          <Suspense fallback={content}>
+          <Suspense fallback={null}>
             <PrivyWrapper>{content}</PrivyWrapper>
           </Suspense>
         ) : (
