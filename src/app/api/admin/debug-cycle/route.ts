@@ -10,6 +10,9 @@ import { desc, and, lte, gte, eq } from 'drizzle-orm';
 export async function GET(_request: Request) {
   try {
   const now = new Date();
+  const dbUrl = process.env.DATABASE_URL;
+  const dbUrlStatus = dbUrl ? `set (starts with: ${dbUrl.slice(0, 20)}...)` : 'NOT SET';
+  const dbType = typeof db;
 
   // All cycles ordered by week number
   const allCycles = await db
@@ -43,6 +46,7 @@ export async function GET(_request: Request) {
   return NextResponse.json({
     serverNow: now.toISOString(),
     currentYear,
+    env: { DATABASE_URL: dbUrlStatus, dbType },
     allCycles: allCycles.map((c) => ({
       id: c.id,
       weekNumber: c.weekNumber,
