@@ -8,6 +8,22 @@ All notable changes to Playgroup are recorded here.
 
 ---
 
+## 2026-03-29
+
+### Fixed
+- **Profile picture upload internal server error** — API route swallowed the real
+  error and returned a generic 500. Now surfaces the actual error message so failures
+  are diagnosable. Also auto-creates the `profile-pictures` Supabase storage bucket
+  on first upload if it doesn't exist yet, recovering gracefully instead of failing.
+- **Login broken when Privy session already active** — `login()` in `use-auth.ts`
+  called `privyLogin()` without checking `privyAuthenticated`. During the window
+  between page load and `syncUser()` completing, `isAuthenticated` is `false` even
+  though Privy already has a session — causing login buttons to appear and triggering
+  a Privy error when clicked. Added `privyAuthenticated` guard so `privyLogin()` is
+  never called on an already-authenticated session.
+
+---
+
 ## 2026-03-28
 
 ### Fixed

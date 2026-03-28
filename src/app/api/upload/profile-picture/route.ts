@@ -33,20 +33,34 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
 
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.storage
+    let { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, arrayBuffer, { contentType: file.type, upsert: true });
 
+    // If the bucket doesn't exist yet, create it (public) and retry once
+    if (error?.message?.toLowerCase().includes('not found') || error?.message?.toLowerCase().includes('does not exist')) {
+      const { error: bucketError } = await supabase.storage.createBucket(BUCKET, { public: true });
+      if (bucketError && !bucketError.message?.toLowerCase().includes('already exists')) {
+        console.error('Supabase bucket creation error:', bucketError);
+        return NextResponse.json({ error: `Bucket creation failed: ${bucketError.message}` }, { status: 500 });
+      }
+      const retry = await supabase.storage
+        .from(BUCKET)
+        .upload(path, arrayBuffer, { contentType: file.type, upsert: true });
+      error = retry.error;
+    }
+
     if (error) {
       console.error('Supabase upload error:', error);
-      return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+      return NextResponse.json({ error: `Upload failed: ${error.message}` }, { status: 500 });
     }
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
     // Cache-bust so browser reloads the new image after update
     return NextResponse.json({ url: `${publicUrl}?t=${Date.now()}` });
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
     console.error('Profile picture upload error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -203,9 +203,9 @@ export function useAuth(): UseAuthResult {
 
   // Login action - opens Privy modal
   const login = useCallback(() => {
-    if (!privyReady) return;
+    if (!privyReady || privyAuthenticated) return;
     privyLogin();
-  }, [privyLogin, privyReady]);
+  }, [privyLogin, privyReady, privyAuthenticated]);
 
   // Logout action
   const logout = useCallback(async () => {
