@@ -8,6 +8,7 @@ import { desc, and, lte, gte, eq } from 'drizzle-orm';
  * GET /api/admin/debug-cycle
  */
 export async function GET(_request: Request) {
+  try {
   const now = new Date();
 
   // All cycles ordered by week number
@@ -61,4 +62,10 @@ export async function GET(_request: Request) {
       cycleId: a.cycleId,
     })),
   });
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    }, { status: 500 });
+  }
 }
