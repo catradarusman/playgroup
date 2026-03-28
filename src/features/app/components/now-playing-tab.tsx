@@ -57,7 +57,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
           totalReviews: currentAlbum.totalReviews,
           mostLovedTrack: currentAlbum.mostLovedTrack,
           mostLovedTrackVotes: currentAlbum.mostLovedTrackVotes,
-          weekNumber: currentAlbum.weekNumber,
+          weekNumber: cycle?.weekNumber ?? currentAlbum.weekNumber,
           submittedBy: currentAlbum.submittedByUsername,
           genres: currentAlbum.genres,
           submissionNote: currentAlbum.submissionNote ?? null,
@@ -143,7 +143,7 @@ export function NowPlayingTab({ onViewProfile }: NowPlayingTabProps) {
               {phase === 'listening' ? 'Now Listening' : "Last Week's Winner"}
             </P>
             <P className="text-xs text-gray-600">
-              Week {currentAlbum.weekNumber} of 26
+              Week {cycle?.weekNumber ?? currentAlbum.weekNumber} of 26
             </P>
             {currentAlbum.coverUrl ? (
               <img

@@ -45,6 +45,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Prevent Vercel/CDN from caching sw.js — browsers must always revalidate
+  // so users pick up new service workers immediately after a deployment.
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      },
+    ];
+  },
   devIndicators: false,
   reactCompiler: true,
 };
