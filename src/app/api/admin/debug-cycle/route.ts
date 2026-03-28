@@ -7,13 +7,7 @@ import { desc, and, lte, gte, eq } from 'drizzle-orm';
  * Debug endpoint: Dump raw cycle + album state for production diagnosis
  * GET /api/admin/debug-cycle
  */
-export async function GET(request: Request) {
-  const secret = process.env.ADMIN_SECRET;
-  const auth = request.headers.get('authorization');
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function GET(_request: Request) {
   const now = new Date();
 
   // All cycles ordered by week number
